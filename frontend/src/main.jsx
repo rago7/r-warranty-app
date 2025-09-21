@@ -1,10 +1,21 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './styles/index.css'
-import App from './app/App.jsx'
+import React from "react";
+import { createRoot } from "react-dom/client";
+import App from "./app/App.jsx";
+import "./styles/globals.css";
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+
+async function enableMocking() {
+    if (import.meta.env.VITE_USE_MOCKS === "true") {
+        const { worker } = await import("./mocks/browser");
+        await worker.start({ onUnhandledRequest: "bypass" });
+    }
+}
+
+
+enableMocking().then(() => {
+    createRoot(document.getElementById("root")).render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>
+    );
+});

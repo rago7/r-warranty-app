@@ -1,0 +1,7 @@
+@import "tailwindcss/preflight";
+@tailwind utilities;
+@tailwind utilities;
+
+/* your custom rules can go below */
+html, body, #root { height: 100%; }
+body { color: rgb(15 23 42); background: rgb(248 250 252); }

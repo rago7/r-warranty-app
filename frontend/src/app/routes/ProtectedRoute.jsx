@@ -1,8 +1,13 @@
 import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../providers/AuthProvider.jsx";
 
 
-// Step 1: stubbed guard — always allows access.
-// Step 2 will add real auth check and redirect to /auth/login
 export default function ProtectedRoute({ children }) {
-return <>{children}</>;
+    const { isAuthed } = useAuth();
+    const location = useLocation();
+    if (!isAuthed) {
+        return <Navigate to="/auth/login" replace state={{ from: location.pathname }} />;
+    }
+    return <>{children}</>;
 }
