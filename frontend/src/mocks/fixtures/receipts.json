@@ -1,0 +1,156 @@
+{
+  "receipts": [
+    {
+      "id": "r001",
+      "title": "iPhone 14 Pro",
+      "product_name": "Apple iPhone 14 Pro 128GB",
+      "merchant": "Apple Store",
+      "purchase_date": "2025-08-10",
+      "total_amount": 999.99,
+      "currency": "USD",
+      "category": "electronics",
+      "tags": ["phone", "work"],
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-08-10", "end_date": "2026-08-10", "provider": "Apple"}
+    },
+    {
+      "id": "r002",
+      "title": "Washer Model X",
+      "product_name": "Whirlpool Washer X200",
+      "merchant": "Best Buy",
+      "purchase_date": "2025-05-22",
+      "total_amount": 649.0,
+      "currency": "USD",
+      "category": "appliances",
+      "tags": ["home"],
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-05-22", "end_date": "2027-05-22", "provider": "Whirlpool"}
+    },
+    {
+      "id": "r003",
+      "title": "Cordless Drill",
+      "product_name": "DeWalt 20V Drill Kit",
+      "merchant": "Home Depot",
+      "purchase_date": "2025-03-12",
+      "total_amount": 129.99,
+      "currency": "USD",
+      "category": "tools",
+      "tags": ["garage"],
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-03-12", "end_date": "2026-03-12", "provider": "DeWalt"}
+    },
+    {
+      "id": "r004",
+      "title": "Office Chair",
+      "product_name": "Herman Miller Aeron",
+      "merchant": "Herman Miller",
+      "purchase_date": "2024-11-18",
+      "total_amount": 1399.0,
+      "currency": "USD",
+      "category": "furniture",
+      "tags": ["office"],
+      "status": "expired",
+      "warranty": {"start_date": "2024-11-18", "end_date": "2025-11-18", "provider": "Herman Miller"}
+    },
+    {
+      "tags": ["living room"],
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-02-15", "end_date": "2027-02-15", "provider": "LG"}
+    },
+    {
+      "id": "r009",
+      "title": "Espresso Machine",
+      "product_name": "Breville Barista Pro",
+      "merchant": "Williams Sonoma",
+      "purchase_date": "2025-06-03",
+      "total_amount": 799.95,
+      "currency": "USD",
+      "category": "appliances",
+      "tags": ["kitchen"],
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-06-03", "end_date": "2027-06-03", "provider": "Breville"}
+    },
+    {
+      "id": "r010",
+      "title": "Running Shoes",
+      "product_name": "Nike Pegasus",
+      "merchant": "Nike Store",
+      "purchase_date": "2025-04-09",
+      "total_amount": 129.99,
+      "currency": "USD",
+      "category": "fashion",
+      "tags": ["fitness"],
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-04-09", "end_date": "2026-04-09", "provider": "Nike"}
+    },
+    {
+      "id": "r011",
+      "title": "Microwave Oven",
+      "product_name": "Panasonic NN-SN686S",
+      "merchant": "Target",
+      "purchase_date": "2024-10-01",
+      "total_amount": 199.99,
+      "currency": "USD",
+      "category": "appliances",
+      "tags": ["kitchen"],
+      "status": "expired",
+      "warranty": {"start_date": "2024-10-01", "end_date": "2025-10-01", "provider": "Panasonic"}
+    },
+    {
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-06-25", "end_date": "2027-06-25", "provider": "Baratza"}
+    },
+    {
+      "id": "r017",
+      "title": "Smartwatch",
+      "product_name": "Apple Watch Series 9",
+      "merchant": "Apple Store",
+      "purchase_date": "2025-09-01",
+      "total_amount": 429.0,
+      "currency": "USD",
+      "category": "electronics",
+      "tags": ["fitness"],
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-09-01", "end_date": "2026-09-01", "provider": "Apple"}
+    },
+    {
+      "id": "r018",
+      "title": "Screwdriver Set",
+      "product_name": "iFixit Mako",
+      "merchant": "iFixit",
+      "purchase_date": "2025-01-07",
+      "total_amount": 39.99,
+      "currency": "USD",
+      "category": "tools",
+      "tags": ["repair"],
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-01-07", "end_date": "2026-01-07", "provider": "iFixit"}
+    },
+    {
+      "id": "r019",
+      "title": "Blender",
+      "product_name": "Vitamix E310",
+      "merchant": "Vitamix",
+      "purchase_date": "2024-09-15",
+      "total_amount": 349.95,
+      "currency": "USD",
+      "category": "appliances",
+      "tags": ["kitchen"],
+      "status": "expired",
+      "warranty": {"start_date": "2024-09-15", "end_date": "2025-09-15", "provider": "Vitamix"}
+    },
+    {
+      "id": "r020",
+      "title": "Standing Desk",
+      "product_name": "UPLIFT V2",
+      "merchant": "UPLIFT Desk",
+      "purchase_date": "2025-08-05",
+      "total_amount": 799.0,
+      "currency": "USD",
+      "category": "furniture",
+      "tags": ["office"],
+      "status": "in_warranty",
+      "warranty": {"start_date": "2025-08-05", "end_date": "2027-08-05", "provider": "UPLIFT"}
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import AppShell from "../components/layout/AppShell.jsx";
 import ErrorBoundary from "../components/feedback/ErrorBoundary.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { AuthProvider } from "./providers/AuthProvider.jsx";
+import QueryProvider from "./providers/QueryProvider.jsx";
 
 
 // Pages
@@ -18,32 +19,34 @@ export default function App() {
     return (
         <ErrorBoundary>
             <BrowserRouter>
-                <AuthProvider>
-                    <Routes>
-                        {/* Public route(s) */}
-                        <Route path="/auth/login" element={<LoginPage />} />
+                <QueryProvider>
+                    <AuthProvider>
+                        <Routes>
+                            {/* Public route(s) */}
+                            <Route path="/auth/login" element={<LoginPage />} />
 
 
-                        {/* Protected nested routes under the App Shell */}
-                        <Route
-                            path="/"
-                            element={
-                                <ProtectedRoute>
-                                    <AppShell />
-                                </ProtectedRoute>
-                            }
-                        >
-                            <Route index element={<Navigate to="/dashboard" replace />} />
-                            <Route path="dashboard" element={<DashboardPage />} />
-                            <Route path="receipts" element={<ReceiptsListPage />} />
-                            <Route path="profile" element={<ProfilePage />} />
-                        </Route>
+                            {/* Protected nested routes under the App Shell */}
+                            <Route
+                                path="/"
+                                element={
+                                    <ProtectedRoute>
+                                        <AppShell />
+                                    </ProtectedRoute>
+                                }
+                            >
+                                <Route index element={<Navigate to="/dashboard" replace />} />
+                                <Route path="dashboard" element={<DashboardPage />} />
+                                <Route path="receipts" element={<ReceiptsListPage />} />
+                                <Route path="profile" element={<ProfilePage />} />
+                            </Route>
 
 
-                        {/* 404 */}
-                        <Route path="*" element={<NotFound />} />
-                    </Routes>
-                </AuthProvider>
+                            {/* 404 */}
+                            <Route path="*" element={<NotFound />} />
+                        </Routes>
+                    </AuthProvider>
+                </QueryProvider>
             </BrowserRouter>
         </ErrorBoundary>
     );
