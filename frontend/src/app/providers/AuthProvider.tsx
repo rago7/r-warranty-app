@@ -1,5 +1,6 @@
-// @ts-ignore
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import http from "../../services/http.js";
 import { getToken, getUser, setAuth, clearAuth } from "../../services/auth.js";
 
 
@@ -11,38 +12,28 @@ export function AuthProvider({ children }) {
     const [token, setToken] = useState(() => getToken());
 
 
-// Hydrate user from /api/auth/me if we only have a token
+// Hydrate user from /api/auth/me if token exists but user not stored
     useEffect(() => {
         // @ts-ignore
         const hydrate = async () => {
             if (token && !user) {
                 try {
-                    const res = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
-                    if (res.ok) {
-                        const data = await res.json();
+                    const { data } = await http.get("/auth/me");
+                    if (data?.user) {
                         setAuth({ token, user: data.user });
                         setUser(data.user);
                     }
-                } catch (e) {
-// ignore for mocks
+                } catch (_) {
+// 401 handled globally in http interceptor
                 }
             }
         };
         hydrate();
     }, [token, user]);
 
-    // @ts-ignore
+
     const login = useCallback(async (email, password) => {
-        const res = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-        });
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.message || "Login failed");
-        }
-        const data = await res.json();
+        const { data } = await http.post("/auth/login", { email, password });
         setAuth({ token: data.access, user: data.user });
         setToken(data.access);
         setUser(data.user);
@@ -53,6 +44,10 @@ export function AuthProvider({ children }) {
         clearAuth();
         setUser(null);
         setToken(null);
+// The UI will redirect on next protected access; optional push here
+        if (!window.location.pathname.startsWith("/auth/login")) {
+            window.location.assign("/auth/login");
+        }
     }, []);
 
 
@@ -61,7 +56,6 @@ export function AuthProvider({ children }) {
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
 
 export function useAuth() {
     const ctx = useContext(AuthContext);
