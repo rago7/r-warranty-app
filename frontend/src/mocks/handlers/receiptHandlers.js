@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw'
+import {http, HttpResponse} from 'msw'
 import dataset from '../fixtures/receipts.json'
 
 
@@ -34,10 +34,30 @@ function filterAndSort(list, params) {
     return items
 }
 
+function makeAttachments(id) {
+// Generate a couple of predictable attachments per receipt
+    return [
+        {
+            id: `${id}-a1`,
+            filename: `receipt-${id}.jpg`,
+            type: 'image',
+            url: `https://placehold.co/600x400?text=Receipt+${id}`,
+            size: 120_000,
+        },
+        {
+            id: `${id}-a2`,
+            filename: `warranty-${id}.pdf`,
+            type: 'pdf',
+// public sample PDF
+            url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+            size: 80_000,
+        },
+    ]
+}
 
 export const receiptHandlers = [
-// GET /api/receipts?query=&merchant=&category=&tag=&from=&to=&sort=&page=&page_size=
-    http.get('/api/receipts', ({ request }) => {
+// List
+    http.get('/api/receipts', ({request}) => {
         const url = new URL(request.url)
         const params = url.searchParams
 
@@ -55,6 +75,18 @@ export const receiptHandlers = [
         const items = filtered.slice(start, end)
 
 
-        return HttpResponse.json({ items, total, page, page_size: pageSize }, { status: 200 })
+        return HttpResponse.json({items, total, page, page_size: pageSize}, {status: 200})
+    }),
+
+    // Detail
+    http.get('/api/receipts/:id', ({params}) => {
+        const id = params.id
+        const found = dataset.receipts.find((r) => r.id === id)
+        if (!found) return HttpResponse.json({message: 'Not found'}, {status: 404})
+        const withFiles = {
+            ...found,
+            attachments: found.attachments && found.attachments.length > 0 ? found.attachments : makeAttachments(id),
+        }
+        return HttpResponse.json(withFiles, {status: 200})
     }),
 ]

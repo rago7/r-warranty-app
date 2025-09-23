@@ -11,6 +11,7 @@ import QueryProvider from "./providers/QueryProvider.jsx";
 import LoginPage from "../features/auth/pages/LoginPage.jsx";
 import DashboardPage from "../features/dashboard/pages/DashboardPage.jsx";
 import ReceiptsListPage from "../features/receipts/pages/ReceiptsListPage.jsx";
+import ReceiptDetailPage from "../features/receipts/pages/ReceiptDetailPage.jsx"; // NEW
 import ProfilePage from "../features/profile/pages/ProfilePage.jsx";
 import NotFound from "../components/feedback/NotFound.jsx";
 
@@ -38,6 +39,7 @@ export default function App() {
                                 <Route index element={<Navigate to="/dashboard" replace />} />
                                 <Route path="dashboard" element={<DashboardPage />} />
                                 <Route path="receipts" element={<ReceiptsListPage />} />
+                                <Route path="receipts/:id" element={<ReceiptDetailPage />} /> {/* NEW */}
                                 <Route path="profile" element={<ProfilePage />} />
                             </Route>
 

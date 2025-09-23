@@ -1,5 +1,6 @@
 import { formatDate } from '../../../lib/date'
 import { formatMoney } from '../../../lib/currency'
+import { Link } from 'react-router-dom'
 
 
 function StatusBadge({ status }) {
@@ -16,7 +17,7 @@ function StatusBadge({ status }) {
 
 export default function ReceiptCard({ receipt }) {
     return (
-        <div className="grid grid-cols-[1fr_auto] gap-2 rounded-xl border border-slate-200 bg-white p-4">
+        <Link to={`/receipts/${receipt.id}`} className="grid grid-cols-[1fr_auto] gap-2 rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
             <div>
                 <div className="flex items-center gap-2">
                     <h3 className="text-base font-semibold">
@@ -42,6 +43,6 @@ export default function ReceiptCard({ receipt }) {
                 <div className="text-sm text-slate-500">Amount</div>
                 <div className="text-lg font-semibold">{formatMoney(receipt.total_amount, receipt.currency)}</div>
             </div>
-        </div>
+        </Link>
     )
 }
