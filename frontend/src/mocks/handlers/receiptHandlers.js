@@ -3,6 +3,7 @@ import dataset from '../fixtures/receipts.json'
 
 // clone fixtures into in-memory DB so we can mutate
 const db = { receipts: dataset.receipts.map((r) => ({ ...r })) }
+export const receiptsDb = db // <-- EXPORT so dashboard can read
 let counter = 1000
 const genId = () => `r${++counter}`
 
@@ -135,7 +136,6 @@ export const receiptHandlers = [
         let filename = 'file'
         let type = 'file'
         let size = 0
-        // Try to parse FormData
         try {
             const form = await request.formData()
             const file = form.get('file')
@@ -158,7 +158,6 @@ export const receiptHandlers = [
         rec.attachments.push(att)
         rec.updated_at = new Date().toISOString()
 
-        // Tiny artificial delay to let the UI show progress
         await new Promise((r) => setTimeout(r, 300))
 
         return HttpResponse.json({ attachment: att }, { status: 201 })
