@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 import { formatMoney } from '../../../lib/currency'
 import { formatDate } from '../../../lib/date'
+import { usePrefs } from '../../../app/providers/PrefsProvider.jsx'
 
 export default function RecentReceiptsWidget({ items }) {
+    const { prefs } = usePrefs()
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-4">
             <div className="mb-2 flex items-center justify-between">
@@ -18,9 +20,9 @@ export default function RecentReceiptsWidget({ items }) {
                                 <Link to={`/receipts/${r.id}`} className="truncate font-medium hover:underline">
                                     {r.title || r.product_name}
                                 </Link>
-                                <div className="truncate text-slate-600">{r.merchant} • {formatDate(r.purchase_date)}</div>
+                                <div className="truncate text-slate-600">{r.merchant} • {formatDate(r.purchase_date, { timeZone: prefs.timezone, locale: prefs.locale })}</div>
                             </div>
-                            <div className="ml-3 shrink-0 font-medium">{formatMoney(r.total_amount, r.currency)}</div>
+                            <div className="ml-3 shrink-0 font-medium">{formatMoney(r.total_amount, prefs.currency || r.currency, prefs.locale)}</div>
                         </li>
                     ))}
                 </ul>

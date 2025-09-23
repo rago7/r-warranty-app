@@ -1,0 +1,10 @@
+{
+  "id": "u_123",
+  "email": "demo@example.com",
+  "name": "Demo User",
+  "preferences": {
+    "currency": "USD",
+    "timezone": "America/Indiana/Indianapolis",
+    "locale": "en-US"
+  }
+}

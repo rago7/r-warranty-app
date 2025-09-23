@@ -1,4 +1,7 @@
+import { usePrefs } from '../../../app/providers/PrefsProvider.jsx'
+
 export default function SpendByCategoryChart({ data }) {
+    const { prefs } = usePrefs()
     const series = Array.isArray(data) ? data : []
     const max = Math.max(1, ...series.map((d) => d.sum || 0))
     return (
@@ -14,7 +17,7 @@ export default function SpendByCategoryChart({ data }) {
                             <div className="h-2 rounded bg-slate-200">
                                 <div className="h-2 rounded bg-indigo-600" style={{ width: `${(Math.max(0, d.sum) / max) * 100}%` }} />
                             </div>
-                            <div className="text-right tabular-nums">{Intl.NumberFormat(undefined, { style: 'currency', currency: d.currency || 'USD' }).format(d.sum)}</div>
+                            <div className="text-right tabular-nums">{Intl.NumberFormat(prefs.locale || undefined, { style: 'currency', currency: prefs.currency || d.currency || 'USD' }).format(d.sum)}</div>
                         </div>
                     ))}
                 </div>

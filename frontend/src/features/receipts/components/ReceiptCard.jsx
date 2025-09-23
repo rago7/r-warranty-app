@@ -1,7 +1,7 @@
 import { formatDate } from '../../../lib/date'
 import { formatMoney } from '../../../lib/currency'
 import { Link } from 'react-router-dom'
-
+import { usePrefs } from '../../../app/providers/PrefsProvider.jsx'
 
 function StatusBadge({ status }) {
     const map = {
@@ -14,8 +14,8 @@ function StatusBadge({ status }) {
     return <span className={`inline-block rounded-full border px-2 py-0.5 text-xs capitalize ${cls}`}>{label}</span>
 }
 
-
 export default function ReceiptCard({ receipt }) {
+    const { prefs } = usePrefs()
     return (
         <Link to={`/receipts/${receipt.id}`} className="grid grid-cols-[1fr_auto] gap-2 rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
             <div>
@@ -28,7 +28,7 @@ export default function ReceiptCard({ receipt }) {
                 <div className="mt-1 text-sm text-slate-600">
                     <span>{receipt.merchant}</span>
                     <span className="mx-2">•</span>
-                    <span>{formatDate(receipt.purchase_date)}</span>
+                    <span>{formatDate(receipt.purchase_date, { timeZone: prefs.timezone, locale: prefs.locale })}</span>
                     {receipt.category ? <><span className="mx-2">•</span><span className="capitalize">{receipt.category}</span></> : null}
                 </div>
                 {receipt.tags?.length ? (
@@ -41,7 +41,7 @@ export default function ReceiptCard({ receipt }) {
             </div>
             <div className="text-right">
                 <div className="text-sm text-slate-500">Amount</div>
-                <div className="text-lg font-semibold">{formatMoney(receipt.total_amount, receipt.currency)}</div>
+                <div className="text-lg font-semibold">{formatMoney(receipt.total_amount, prefs.currency || receipt.currency, prefs.locale)}</div>
             </div>
         </Link>
     )
