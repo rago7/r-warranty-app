@@ -4,8 +4,10 @@ import WarrantyStatusTiles from '../components/WarrantyStatusTiles'
 import UpcomingExpiriesWidget from '../components/UpcomingExpiriesWidget'
 import RecentReceiptsWidget from '../components/RecentReceiptsWidget'
 import SpendByCategoryChart from '../components/SpendByCategoryChart'
+import useTitle from '../../../lib/useTitle'
 
 export default function DashboardPage() {
+    useTitle('Dashboard')
     const { data, isLoading, isError, error } = useQuery({
         queryKey: ['dashboard','summary'],
         queryFn: getDashboardSummary,
@@ -38,14 +40,11 @@ export default function DashboardPage() {
     return (
         <div className="grid gap-4">
             <h1 className="text-xl font-bold">Dashboard</h1>
-
             <WarrantyStatusTiles totals={s.totals} />
-
             <div className="grid gap-4 sm:grid-cols-2">
                 <UpcomingExpiriesWidget items={s.upcoming_expiries} />
                 <RecentReceiptsWidget items={s.recent_receipts} />
             </div>
-
             <SpendByCategoryChart data={s.by_category} />
         </div>
     )

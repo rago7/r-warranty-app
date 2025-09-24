@@ -4,7 +4,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { listReceipts } from '../api'
 import ReceiptCard from '../components/ReceiptCard'
 import Skeleton from '../../../components/feedback/Skeleton'
-import FiltersBar from '../components/FiltersBar'
+import useTitle from '../../../lib/useTitle'
+import FiltersBar from "../components/FiltersBar.jsx";
 
 function useFilters() {
     const [sp, setSp] = useSearchParams()
@@ -32,6 +33,7 @@ function useFilters() {
 }
 
 export default function ReceiptsListPage() {
+    useTitle('Receipts')
     const [filters, setFilters] = useFilters()
 
     const query = useQuery({
@@ -115,7 +117,7 @@ export default function ReceiptsListPage() {
 }
 
 function Filters({ filters, onApply, onCategoryChange, onSortChange, onPageSizeChange }) {
-
+    // const FiltersBar = require('../components/FiltersBar').default
     return (
         <div>
             <FiltersBar

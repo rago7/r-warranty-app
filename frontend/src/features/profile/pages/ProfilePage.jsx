@@ -4,39 +4,35 @@ import { getProfile, updateProfile, changePassword } from '../api'
 import Input from '../../../components/forms/Input'
 import Select from '../../../components/forms/Select'
 import { usePrefs } from '../../../app/providers/PrefsProvider.jsx'
+import { useToast } from '../../../app/providers/ToastProvider.jsx'
+import useTitle from '../../../lib/useTitle'
 
 const TZ_OPTS = [
     'America/Indiana/Indianapolis',
-    'UTC',
-    'America/New_York',
-    'America/Los_Angeles',
-    'Europe/London',
-    'Asia/Kolkata',
+    'UTC','America/New_York','America/Los_Angeles','Europe/London','Asia/Kolkata',
 ].map((t) => ({ value: t, label: t }))
-
 const CURR_OPTS = ['USD','EUR','INR','GBP'].map((c) => ({ value: c, label: c }))
 
 export default function ProfilePage() {
+    useTitle('Profile & Settings')
+    const { toast } = useToast()
     const qc = useQueryClient()
     const { prefs, setPrefs, isSaving } = usePrefs()
 
     const { data, isLoading, isError, error } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
-
     const prof = data || { name: '', email: '', preferences: prefs }
 
     const profileMut = useMutation({
         mutationFn: (payload) => updateProfile(payload),
-        onSuccess: (next) => {
-            qc.setQueryData(['profile'], next)
-        },
+        onSuccess: (next) => { qc.setQueryData(['profile'], next); toast({ title: 'Profile updated', variant: 'success' }) },
+        onError: (e) => toast({ title: 'Update failed', description: e?.message || 'Unknown error', variant: 'error' })
     })
 
     const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
-    const [pwMsg, setPwMsg] = useState('')
     const pwMut = useMutation({
         mutationFn: () => changePassword(pw),
-        onSuccess: () => { setPwMsg('Password updated'); setPw({ current: '', next: '', confirm: '' }) },
-        onError: (e) => setPwMsg(e?.message || 'Failed to update password'),
+        onSuccess: () => { toast({ title: 'Password updated', variant: 'success' }); setPw({ current: '', next: '', confirm: '' }) },
+        onError: (e) => toast({ title: 'Password not updated', description: e?.message || 'Unknown error', variant: 'error' })
     })
 
     if (isLoading) return <div className="grid gap-3"><div className="h-8 animate-pulse rounded bg-slate-200" /><div className="h-40 animate-pulse rounded bg-slate-200" /></div>
@@ -63,9 +59,6 @@ export default function ProfilePage() {
                     <Select label="Currency" options={CURR_OPTS} value={prefs.currency} onChange={(e) => setPrefs({ currency: e.target.value })} />
                     <Input label="Locale" value={prefs.locale || ''} onChange={(e) => setPrefs({ locale: e.target.value })} hint="e.g., en-US, fr-FR" />
                 </div>
-                <div className="mt-3 text-sm text-slate-600">
-                    <strong>Preview:</strong> Dates and money across the app will reflect your timezone/currency where applicable.
-                </div>
                 <div className="mt-2 text-xs text-slate-500">{isSaving ? 'Saving…' : 'Saved'}</div>
             </section>
 
@@ -74,12 +67,11 @@ export default function ProfilePage() {
                 <h2 className="font-semibold">Security</h2>
                 <form
                     className="mt-3 grid gap-3 sm:max-w-md"
-                    onSubmit={(e) => { e.preventDefault(); if (pw.next !== pw.confirm) { setPwMsg('Passwords do not match'); return; } pwMut.mutate(); }}
+                    onSubmit={(e) => { e.preventDefault(); if (pw.next !== pw.confirm) { return toast({ title: 'Passwords do not match', variant: 'error' }) } pwMut.mutate(); }}
                 >
                     <Input label="Current password" type="password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />
                     <Input label="New password" type="password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} />
                     <Input label="Confirm new password" type="password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} />
-                    {pwMsg && <div className={`text-sm ${pwMsg.includes('updated') ? 'text-emerald-700' : 'text-rose-700'}`}>{pwMsg}</div>}
                     <div>
                         <button type="submit" disabled={pwMut.isPending} className="rounded-lg border border-slate-200 bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 disabled:opacity-60">
                             {pwMut.isPending ? 'Updating…' : 'Update password'}

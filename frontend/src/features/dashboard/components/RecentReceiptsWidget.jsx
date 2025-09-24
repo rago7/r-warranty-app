@@ -14,8 +14,9 @@ export default function RecentReceiptsWidget({ items }) {
                 <p className="text-sm text-slate-600">No recent receipts.</p>
             ) : (
                 <ul className="grid gap-2">
-                    {items.map((r) => (
-                        <li key={r.id} className="flex items-center justify-between text-sm">
+                    {items.map((r, i) => (
+                        <li key={r.id || r.order_number || `${r.merchant}-${r.purchase_date}-${i}` }
+                            className="flex items-center justify-between text-sm">
                             <div className="min-w-0">
                                 <Link to={`/receipts/${r.id}`} className="truncate font-medium hover:underline">
                                     {r.title || r.product_name}

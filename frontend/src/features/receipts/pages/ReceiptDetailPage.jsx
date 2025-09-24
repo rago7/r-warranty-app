@@ -7,6 +7,7 @@ import { formatMoney } from '../../../lib/currency'
 import { warrantyInfo } from '../../../lib/warranty'
 import AttachmentItem from '../components/AttachmentItem'
 import { usePrefs } from '../../../app/providers/PrefsProvider.jsx'
+import useTitle from '../../../lib/useTitle'
 
 function StatusBadge({ status }) {
     const map = {
@@ -27,6 +28,8 @@ export default function ReceiptDetailPage() {
         queryFn: () => getReceipt(id),
     })
 
+    useTitle(data?.title || data?.product_name ? `${data.title || data.product_name}` : 'Receipt')
+
     if (isLoading) return <DetailSkeleton />
     if (isError) {
         const message = error?.response?.status === 404 ? 'Receipt not found' : (error?.message || 'Failed to load receipt')
@@ -43,7 +46,10 @@ export default function ReceiptDetailPage() {
 
     return (
         <div className="space-y-5">
-            <BackLink />
+            <div className="flex items-center justify-between">
+                <BackLink />
+                <Link to={`/receipts/${id}/edit`} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-50">Edit</Link>
+            </div>
 
             <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
