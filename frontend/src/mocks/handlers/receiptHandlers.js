@@ -1,11 +1,43 @@
 import { http, HttpResponse } from 'msw'
 import dataset from '../fixtures/receipts.json'
 
-// clone fixtures into in-memory DB so we can mutate
-const db = { receipts: dataset.receipts.map((r) => ({ ...r })) }
-export const receiptsDb = db // <-- EXPORT so dashboard can read
+// -------- In-memory DB with safe defaults --------
+export const receiptsDb = {
+    receipts: (dataset?.receipts || []).map((r, idx) => {
+        const id = r?.id ?? `r_seed_${idx + 1}`
+        const warranty = r?.warranty || {}
+        const end = warranty?.end_date ? new Date(warranty.end_date) : null
+        const status = end ? (end.getTime() >= Date.now() ? 'in_warranty' : 'expired') : 'unknown'
+        return {
+            id,
+            title: r?.title ?? r?.product_name ?? 'Untitled',
+            product_name: r?.product_name ?? r?.title ?? 'Unknown',
+            merchant: r?.merchant ?? 'Unknown',
+            purchase_date: r?.purchase_date ?? new Date().toISOString().slice(0, 10),
+            total_amount: Number(r?.total_amount ?? 0),
+            currency: r?.currency ?? 'USD',
+            category: r?.category ?? 'electronics',
+            tags: Array.isArray(r?.tags) ? r.tags : [],
+            serial_number: r?.serial_number ?? '',
+            order_number: r?.order_number ?? '',
+            warranty,
+            status,
+            created_at: r?.created_at ?? new Date().toISOString(),
+            updated_at: r?.updated_at ?? new Date().toISOString(),
+            attachments: Array.isArray(r?.attachments) ? r.attachments : [],
+        }
+    }),
+}
+const db = receiptsDb
+
 let counter = 1000
 const genId = () => `r${++counter}`
+
+function statusFromWarranty(warranty) {
+    const end = warranty?.end_date ? new Date(warranty.end_date) : null
+    if (!end) return 'unknown'
+    return end.getTime() >= Date.now() ? 'in_warranty' : 'expired'
+}
 
 function filterAndSort(list, params) {
     let items = [...list]
@@ -15,10 +47,10 @@ function filterAndSort(list, params) {
 
     if (q) {
         items = items.filter((r) =>
-            r.merchant.toLowerCase().includes(q) ||
-            r.product_name.toLowerCase().includes(q) ||
-            r.title.toLowerCase().includes(q) ||
-            (r.tags || []).some((t) => t.toLowerCase().includes(q))
+            (r.merchant || '').toLowerCase().includes(q) ||
+            (r.product_name || '').toLowerCase().includes(q) ||
+            (r.title || '').toLowerCase().includes(q) ||
+            (r.tags || []).some((t) => (t || '').toLowerCase().includes(q))
         )
     }
     if (category && category !== 'all') {
@@ -29,17 +61,11 @@ function filterAndSort(list, params) {
         items.sort((a, b) => new Date(a.purchase_date) - new Date(b.purchase_date))
         if (sort === 'date_desc') items.reverse()
     } else if (sort === 'amount_desc' || sort === 'amount_asc') {
-        items.sort((a, b) => (a.total_amount - b.total_amount))
+        items.sort((a, b) => a.total_amount - b.total_amount)
         if (sort === 'amount_desc') items.reverse()
     }
 
     return items
-}
-
-function statusFromWarranty(warranty) {
-    const end = warranty?.end_date ? new Date(warranty.end_date) : null
-    if (!end) return 'unknown'
-    return end.getTime() >= Date.now() ? 'in_warranty' : 'expired'
 }
 
 export const receiptHandlers = [
@@ -68,14 +94,25 @@ export const receiptHandlers = [
         if (!found) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
         const withFiles = {
             ...found,
-            attachments: found.attachments && found.attachments.length > 0 ? found.attachments : [
-                {
-                    id: `${id}-a1`, filename: `receipt-${id}.jpg`, type: 'image', url: `https://placehold.co/600x400?text=Receipt+${id}`, size: 120000,
-                },
-                {
-                    id: `${id}-a2`, filename: `warranty-${id}.pdf`, type: 'pdf', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', size: 80000,
-                }
-            ],
+            attachments:
+                found.attachments && found.attachments.length > 0
+                    ? found.attachments
+                    : [
+                        {
+                            id: `${id}-a1`,
+                            filename: `receipt-${id}.jpg`,
+                            type: 'image',
+                            url: `https://placehold.co/600x400?text=Receipt+${id}`,
+                            size: 120000,
+                        },
+                        {
+                            id: `${id}-a2`,
+                            filename: `warranty-${id}.pdf`,
+                            type: 'pdf',
+                            url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+                            size: 80000,
+                        },
+                    ],
         }
         return HttpResponse.json(withFiles, { status: 200 })
     }),
@@ -90,7 +127,7 @@ export const receiptHandlers = [
                 title: body.title || body.product_name || 'Untitled',
                 product_name: body.product_name || body.title || 'Unknown',
                 merchant: body.merchant || 'Unknown',
-                purchase_date: body.purchase_date,
+                purchase_date: body.purchase_date || new Date().toISOString().slice(0, 10),
                 total_amount: Number(body.total_amount || 0),
                 currency: body.currency || 'USD',
                 category: body.category || 'electronics',
@@ -105,7 +142,7 @@ export const receiptHandlers = [
             }
             db.receipts.unshift(rec)
             return HttpResponse.json(rec, { status: 201 })
-        } catch (e) {
+        } catch {
             return HttpResponse.json({ message: 'Bad request' }, { status: 400 })
         }
     }),
@@ -142,7 +179,12 @@ export const receiptHandlers = [
             if (file && typeof file === 'object') {
                 filename = file.name || filename
                 size = file.size || 0
-                type = (file.type || '').startsWith('image') ? 'image' : (file.name || '').toLowerCase().endsWith('.pdf') ? 'pdf' : 'file'
+                type =
+                    (file.type || '').startsWith('image')
+                        ? 'image'
+                        : (file.name || '').toLowerCase().endsWith('.pdf')
+                            ? 'pdf'
+                            : 'file'
             }
         } catch (_) {}
 
@@ -151,7 +193,10 @@ export const receiptHandlers = [
             filename,
             type,
             size,
-            url: type === 'image' ? `https://placehold.co/800x600?text=${encodeURIComponent(filename)}` : 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+            url:
+                type === 'image'
+                    ? `https://placehold.co/800x600?text=${encodeURIComponent(filename)}`
+                    : 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         }
 
         rec.attachments = rec.attachments || []
@@ -159,7 +204,15 @@ export const receiptHandlers = [
         rec.updated_at = new Date().toISOString()
 
         await new Promise((r) => setTimeout(r, 300))
-
         return HttpResponse.json({ attachment: att }, { status: 201 })
+    }),
+
+    // DELETE
+    http.delete('/api/receipts/:id', ({ params }) => {
+        const id = params.id
+        const idx = db.receipts.findIndex((r) => r.id === id)
+        if (idx === -1) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
+        db.receipts.splice(idx, 1)
+        return HttpResponse.json({ ok: true }, { status: 200 })
     }),
 ]
