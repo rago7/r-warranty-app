@@ -1,39 +1,38 @@
-import axios from "axios";
-import { getToken, clearAuth } from "./auth.js";
-import { getApiBaseUrl } from "../lib/env.js";
+import axios from 'axios'
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-const http = axios.create({
-    baseURL: getApiBaseUrl(),
-    withCredentials: false,
-    headers: { "Content-Type": "application/json" },
-});
+const http = axios.create({ baseURL })
 
-// Attach Authorization header if we have a token
+// Attach token if present
 http.interceptors.request.use((config) => {
-    const token = getToken();
-    if (token) {
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
+    try {
+        const token = localStorage.getItem('token')
+        if (token) {
+            config.headers = config.headers || {}
+            config.headers.Authorization = `Bearer ${token}`
+        }
+    } catch {}
+    return config
+})
 
-
-// Global 401 handler: clear auth and kick to /auth/login
+// Global 401 handler: clear creds and bounce to login
 http.interceptors.response.use(
-    (resp) => resp,
+    (res) => res,
     (error) => {
-        const status = error?.response?.status;
+        const status = error?.response?.status
         if (status === 401) {
-            clearAuth();
-            if (!window.location.pathname.startsWith("/auth/login")) {
-                window.location.assign("/auth/login");
+            try {
+                localStorage.removeItem('token')
+                localStorage.removeItem('user')
+            } catch {}
+            const here = window.location.pathname + window.location.search
+            if (!here.startsWith('/auth/')) {
+                window.location.assign(`/auth/login?next=${encodeURIComponent(here)}`)
             }
         }
-        return Promise.reject(error);
+        return Promise.reject(error)
     }
-);
+)
 
-
-export default http;
+export default http
