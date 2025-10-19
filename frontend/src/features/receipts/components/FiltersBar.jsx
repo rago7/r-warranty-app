@@ -13,26 +13,26 @@ const SORT_OPTIONS = [
 export default function FiltersBar({ q, category, sort, pageSize, onApply, onCategoryChange, onSortChange, onPageSizeChange }) {
     const [text, setText] = useState(q || '')
     return (
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
             {/* Search */}
             <div className="flex-1">
                 <label className="block text-sm font-medium">Search</label>
                 <div className="mt-1 flex gap-2">
                     <input
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        className="w-full rounded-lg border border-[rgb(var(--border))] bg-white px-3 py-2 text-[rgb(var(--fg))] placeholder:text-slate-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
                         placeholder="merchant, product, tags…"
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') onApply({ q: text }) }}
                     />
-                    <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50" onClick={() => onApply({ q: text })}>Apply</button>
+                    <button className="btn btn-outline" onClick={() => onApply({ q: text })}>Apply</button>
                 </div>
             </div>
             {/* Category */}
             <div>
                 <label className="block text-sm font-medium">Category</label>
                 <select
-                    className="mt-1 w-44 rounded-lg border border-slate-300 px-2 py-2"
+                    className="mt-1 w-full rounded-lg border border-[rgb(var(--border))] bg-white px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-44"
                     value={category || 'all'}
                     onChange={(e) => onCategoryChange(e.target.value)}
                 >
@@ -45,7 +45,7 @@ export default function FiltersBar({ q, category, sort, pageSize, onApply, onCat
             <div>
                 <label className="block text-sm font-medium">Sort</label>
                 <select
-                    className="mt-1 w-48 rounded-lg border border-slate-300 px-2 py-2"
+                    className="mt-1 w-full rounded-lg border border-[rgb(var(--border))] bg-white px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-48"
                     value={sort || 'date_desc'}
                     onChange={(e) => onSortChange(e.target.value)}
                 >
@@ -58,7 +58,7 @@ export default function FiltersBar({ q, category, sort, pageSize, onApply, onCat
             <div>
                 <label className="block text-sm font-medium">Per page</label>
                 <select
-                    className="mt-1 w-28 rounded-lg border border-slate-300 px-2 py-2"
+                    className="mt-1 w-full rounded-lg border border-[rgb(var(--border))] bg-white px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-28"
                     value={String(pageSize || 10)}
                     onChange={(e) => onPageSizeChange(Number(e.target.value))}
                 >

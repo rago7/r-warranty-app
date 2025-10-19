@@ -1,0 +1,6 @@
+{
+  "users": [
+    { "id": "u1", "name": "Demo User",  "email": "demo@warranty.test",  "password": "demo123",  "role": "user"  },
+    { "id": "u2", "name": "Admin User", "email": "admin@warranty.test", "password": "admin123", "role": "admin" }
+  ]
+}

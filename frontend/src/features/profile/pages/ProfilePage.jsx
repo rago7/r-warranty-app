@@ -73,7 +73,7 @@ export default function ProfilePage() {
                     <Input label="New password" type="password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} />
                     <Input label="Confirm new password" type="password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} />
                     <div>
-                        <button type="submit" disabled={pwMut.isPending} className="rounded-lg border border-slate-200 bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700 disabled:opacity-60">
+                        <button type="submit" disabled={pwMut.isPending} className="btn btn-primary">
                             {pwMut.isPending ? 'Updating…' : 'Update password'}
                         </button>
                     </div>

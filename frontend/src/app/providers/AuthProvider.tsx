@@ -1,64 +1,90 @@
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { getMe, login as loginApi, logout as logoutApi } from '../../features/auth/api'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import http from "../../services/http.js";
-import { getToken, getUser, setAuth, clearAuth } from "../../services/auth.js";
-
-
-const AuthContext = createContext(null);
-
+const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(() => getUser());
-    const [token, setToken] = useState(() => getToken());
+    const qc = useQueryClient()
+    const [user, setUser] = useState(null)
+    const [token, setToken] = useState(null)
+    const [isLoading, setIsLoading] = useState(true)
 
-
-// Hydrate user from /api/auth/me if token exists but user not stored
+    // Load persisted auth on boot
     useEffect(() => {
-        // @ts-ignore
-        const hydrate = async () => {
-            if (token && !user) {
-                try {
-                    const { data } = await http.get("/auth/me");
-                    if (data?.user) {
-                        setAuth({ token, user: data.user });
-                        setUser(data.user);
-                    }
-                } catch (_) {
-// 401 handled globally in http interceptor
+        try {
+            const t = localStorage.getItem('token')
+            const u = localStorage.getItem('user')
+            if (t) setToken(t)
+            if (u) setUser(JSON.parse(u))
+        } catch {}
+        setIsLoading(false)
+    }, [])
+
+    // Optionally revalidate the user when token changes (mock /me)
+    useEffect(() => {
+        let cancelled = false
+        async function revalidate() {
+            if (!token) return
+            try {
+                const me = await getMe()
+                if (!cancelled) {
+                    setUser(me)
+                    localStorage.setItem('user', JSON.stringify(me))
+                }
+            } catch {
+                // token invalid → clear
+                if (!cancelled) {
+                    doLogout(false)
                 }
             }
-        };
-        hydrate();
-    }, [token, user]);
-
-
-    const login = useCallback(async (email, password) => {
-        const { data } = await http.post("/auth/login", { email, password });
-        setAuth({ token: data.access, user: data.user });
-        setToken(data.access);
-        setUser(data.user);
-    }, []);
-
-
-    const logout = useCallback(() => {
-        clearAuth();
-        setUser(null);
-        setToken(null);
-// The UI will redirect on next protected access; optional push here
-        if (!window.location.pathname.startsWith("/auth/login")) {
-            window.location.assign("/auth/login");
         }
-    }, []);
+        revalidate()
+        return () => { cancelled = true }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token])
 
+    function persist(t, u) {
+        try {
+            localStorage.setItem('token', t)
+            localStorage.setItem('user', JSON.stringify(u))
+        } catch {}
+    }
 
-    const value = useMemo(() => ({ user, token, isAuthed: Boolean(token), login, logout }), [user, token, login, logout]);
+    async function doLogin(email, password) {
+        const { token: t, user: u } = await loginApi(email, password)
+        setToken(t)
+        setUser(u)
+        persist(t, u)
+        return u
+    }
 
+    async function doLogout(callApi = true) {
+        try {
+            if (callApi) await logoutApi()
+        } catch {}
+        try {
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+        } catch {}
+        setToken(null)
+        setUser(null)
+        qc.clear()
+    }
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    const value = useMemo(() => ({
+        user,
+        token,
+        isLoading,
+        login: doLogin,
+        logout: doLogout,
+    }), [user, token, isLoading])
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
-    const ctx = useContext(AuthContext);
-    if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-    return ctx;
+    const ctx = useContext(AuthContext)
+    if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+    return ctx
 }

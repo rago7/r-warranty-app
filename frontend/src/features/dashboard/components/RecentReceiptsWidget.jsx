@@ -3,12 +3,13 @@ import { formatMoney } from '../../../lib/currency'
 import { formatDate } from '../../../lib/date'
 import { usePrefs } from '../../../app/providers/PrefsProvider.jsx'
 
-export default function RecentReceiptsWidget({ items }) {
+export default function RecentReceiptsWidget({ items, bare = false }) {
     const { prefs } = usePrefs()
-    return (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+
+    const content = (
+        <>
             <div className="mb-2 flex items-center justify-between">
-                <h3 className="font-semibold">Recent receipts</h3>
+                <h3 className="card-title">Recent receipts</h3>
             </div>
             {(!items || items.length === 0) ? (
                 <p className="text-sm text-slate-600">No recent receipts.</p>
@@ -28,6 +29,14 @@ export default function RecentReceiptsWidget({ items }) {
                     ))}
                 </ul>
             )}
+        </>
+    )
+
+    if (bare) return content
+
+    return (
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+            {content}
         </div>
     )
 }

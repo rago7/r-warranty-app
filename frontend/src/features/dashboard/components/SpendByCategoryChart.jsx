@@ -1,12 +1,13 @@
 import { usePrefs } from '../../../app/providers/PrefsProvider.jsx'
 
-export default function SpendByCategoryChart({ data }) {
+export default function SpendByCategoryChart({ data, bare = false }) {
     const { prefs } = usePrefs()
     const series = Array.isArray(data) ? data : []
     const max = Math.max(1, ...series.map((d) => d.sum || 0))
-    return (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <h3 className="mb-3 font-semibold">Spend by category</h3>
+
+    const content = (
+        <>
+            <h3 className="card-title">Spend by category</h3>
             {series.length === 0 ? (
                 <p className="text-sm text-slate-600">No data.</p>
             ) : (
@@ -22,5 +23,14 @@ export default function SpendByCategoryChart({ data }) {
                     ))}
                 </div>
             )}
+        </>
+    )
+
+    if (bare) return content
+
+    return (
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+            {content}
         </div>
-    )}
+    )
+}

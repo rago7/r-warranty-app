@@ -17,12 +17,13 @@ export default function DashboardPage() {
     if (isLoading) {
         return (
             <div className="grid gap-4">
-                <div className="h-20 animate-pulse rounded bg-slate-200" />
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="h-48 animate-pulse rounded bg-slate-200" />
-                    <div className="h-48 animate-pulse rounded bg-slate-200" />
+                <div className="h-6 w-48 animate-pulse rounded bg-slate-200" />
+                <div className="grid gap-8 grid-cols-1 sm:grid-cols-2">
+                    <div className="h-40 animate-pulse rounded bg-slate-200" />
+                    <div className="h-40 animate-pulse rounded bg-slate-200" />
+                    <div className="h-40 animate-pulse rounded bg-slate-200" />
+                    <div className="h-40 animate-pulse rounded bg-slate-200" />
                 </div>
-                <div className="h-48 animate-pulse rounded bg-slate-200" />
             </div>
         )
     }
@@ -40,12 +41,21 @@ export default function DashboardPage() {
     return (
         <div className="grid gap-4">
             <h1 className="text-xl font-bold">Dashboard</h1>
-            <WarrantyStatusTiles totals={s.totals} />
-            <div className="grid gap-4 sm:grid-cols-2">
-                <UpcomingExpiriesWidget items={s.upcoming_expiries} />
-                <RecentReceiptsWidget items={s.recent_receipts} />
+            <div className="dashboard-sections">
+                <section className="card card-padded shadow-md">
+                    <h3 className="card-title">Quick look</h3>
+                    <WarrantyStatusTiles totals={s.totals} />
+                </section>
+                <section className="card card-padded shadow-md">
+                    <UpcomingExpiriesWidget items={s.upcoming_expiries} bare />
+                </section>
+                <section className="card card-padded shadow-md">
+                    <RecentReceiptsWidget items={s.recent_receipts} bare />
+                </section>
+                <section className="card card-padded shadow-md">
+                    <SpendByCategoryChart data={s.by_category} bare />
+                </section>
             </div>
-            <SpendByCategoryChart data={s.by_category} />
         </div>
     )
 }

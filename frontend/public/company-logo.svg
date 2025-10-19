@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="32" viewBox="0 0 120 32" role="img" aria-labelledby="title desc">
+  <title id="title">Company Logo</title>
+  <desc id="desc">Stylized WM monogram for Warranty Manager</desc>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#4F46E5"/>
+    </linearGradient>
+  </defs>
+  <rect rx="6" ry="6" width="48" height="28" x="2" y="2" fill="url(#g)" />
+  <path d="M14 21l-3-10h2l2 7 2-7h2l2 7 2-7h2l-3 10h-2l-2-7-2 7h-2z" fill="#fff"/>
+  <text x="56" y="21" font-family="Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial" font-size="16" font-weight="700" fill="#1f2937">Warranty</text>
+  <text x="56" y="30" font-family="Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial" font-size="10" font-weight="600" fill="#64748b">Manager</text>
+</svg>

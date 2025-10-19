@@ -71,7 +71,7 @@ export default function ReceiptDetailPage() {
                 <div className="flex gap-2">
                     <Link
                         to={`/receipts/${id}/edit`}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-50"
+                        className="btn btn-outline btn-sm"
                     >
                         Edit
                     </Link>
@@ -82,7 +82,7 @@ export default function ReceiptDetailPage() {
                             e.stopPropagation()
                             setShowConfirm(true)
                         }}
-                        className="cursor-pointer rounded-lg border border-rose-200 bg-rose-600 px-3 py-1.5 text-sm text-white hover:bg-rose-700"
+                        className="btn btn-danger btn-sm cursor-pointer"
                     >
                         Delete
                     </button>

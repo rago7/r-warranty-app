@@ -2,12 +2,13 @@ import { Link } from 'react-router-dom'
 import { formatDate } from '../../../lib/date'
 import { usePrefs } from '../../../app/providers/PrefsProvider.jsx'
 
-export default function UpcomingExpiriesWidget({ items }) {
+export default function UpcomingExpiriesWidget({ items, bare = false }) {
     const { prefs } = usePrefs()
-    return (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+
+    const content = (
+        <>
             <div className="mb-2 flex items-center justify-between">
-                <h3 className="font-semibold">Upcoming expiries (60 days)</h3>
+                <h3 className="card-title">Upcoming expiries (60 days)</h3>
             </div>
             {(!items || items.length === 0) ? (
                 <p className="text-sm text-slate-600">Nothing expiring soon.</p>
@@ -31,6 +32,14 @@ export default function UpcomingExpiriesWidget({ items }) {
                     ))}
                 </ul>
             )}
+        </>
+    )
+
+    if (bare) return content
+
+    return (
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+            {content}
         </div>
     )
 }

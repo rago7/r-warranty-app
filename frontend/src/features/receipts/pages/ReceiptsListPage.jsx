@@ -52,7 +52,7 @@ export default function ReceiptsListPage() {
         <div>
             <div className="mb-3 flex items-center justify-between">
                 <h1 className="text-xl font-bold">Receipts</h1>
-                <Link to="/receipts/new" className="rounded-lg border border-slate-200 bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700">Add receipt</Link>
+                <Link to="/receipts/new" className="btn btn-primary">Add receipt</Link>
             </div>
 
             <Filters
@@ -97,14 +97,14 @@ export default function ReceiptsListPage() {
                 </div>
                 <div className="flex gap-2">
                     <button
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 disabled:opacity-50"
+                        className="btn btn-outline btn-sm"
                         disabled={page <= 1}
                         onClick={() => setFilters({ page: page - 1 })}
                     >
                         Prev
                     </button>
                     <button
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 disabled:opacity-50"
+                        className="btn btn-outline btn-sm"
                         disabled={page * pageSize >= total}
                         onClick={() => setFilters({ page: page + 1 })}
                     >

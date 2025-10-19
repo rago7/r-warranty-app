@@ -8,7 +8,7 @@ export default function WarrantyStatusTiles({ totals }) {
     return (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {blocks.map((b) => (
-                <div key={b.key} className="rounded-xl border border-slate-200 bg-white p-4">
+                <div key={b.key} className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 shadow">
                     <div className="text-sm text-slate-500">{b.label}</div>
                     <div className="text-2xl font-bold">{totals?.[b.key] ?? 0}</div>
                 </div>

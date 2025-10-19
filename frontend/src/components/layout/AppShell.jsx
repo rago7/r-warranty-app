@@ -1,60 +1,123 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import SkipLink from '../ally/SkipLink.jsx'
 import { useAuth } from '../../app/providers/AuthProvider.jsx'
 
+function IconHome(props) {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+            <path d="M3 10.5l9-7 9 7"/>
+            <path d="M9 21V12h6v9"/>
+        </svg>
+    )
+}
+
+function IconReceipt(props) {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+            <path d="M6 2h9a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2V4a2 2 0 0 1 2-2z"/>
+            <path d="M9 7h6M9 11h6M9 15h4"/>
+        </svg>
+    )
+}
+
 export default function AppShell() {
     const { user, logout } = useAuth()
+    const [menuOpen, setMenuOpen] = useState(false)
+    const menuRef = useRef(null)
+    const buttonRef = useRef(null)
+    const navigate = useNavigate()
+
+    const navLinkCls = ({ isActive }) => `flex flex-col items-center rounded-md px-3 py-1.5 text-sm ${isActive ? 'text-[rgb(var(--primary))] bg-[rgb(var(--primary)/0.08)]' : 'text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))]'}`
+
+    useEffect(() => {
+        function onDocClick(e) {
+            if (!menuOpen) return
+            if (menuRef.current && !menuRef.current.contains(e.target) && buttonRef.current && !buttonRef.current.contains(e.target)) {
+                setMenuOpen(false)
+            }
+        }
+        function onKey(e) {
+            if (e.key === 'Escape') setMenuOpen(false)
+        }
+        document.addEventListener('mousedown', onDocClick)
+        document.addEventListener('keydown', onKey)
+        return () => {
+            document.removeEventListener('mousedown', onDocClick)
+            document.removeEventListener('keydown', onKey)
+        }
+    }, [menuOpen])
+
     return (
-        <div className="min-h-dvh bg-slate-50">
+        <div className="min-h-dvh bg-[rgb(var(--bg))] text-[rgb(var(--fg))]">
             <SkipLink />
-            <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
-                <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-                    <div className="flex items-center gap-6">
-                        <NavLink to="/dashboard" className="text-sm font-semibold">
-                            Warranty Manager
+            <header className="sticky top-0 z-40 border-b border-[rgb(var(--border))] bg-[rgb(var(--card))]/80 backdrop-blur">
+                <div className="container-app grid grid-cols-[1fr_auto_1fr] items-center py-2">
+                    {/* Left: Logo */}
+                    <div className="flex items-center">
+                        <NavLink to="/dashboard" className="inline-flex items-center gap-2" aria-label="Go to dashboard">
+                            <img src="/company-logo.svg" alt="Company" className="h-7 w-auto" />
                         </NavLink>
-                        <nav className="flex gap-4">
-                            <NavLink
-                                to="/dashboard"
-                                className={({ isActive }) =>
-                                    `text-sm ${isActive ? 'font-semibold text-indigo-700' : 'text-slate-700 hover:text-slate-900'}`
-                                }
-                            >
-                                Dashboard
-                            </NavLink>
-                            <NavLink
-                                to="/receipts"
-                                className={({ isActive }) =>
-                                    `text-sm ${isActive ? 'font-semibold text-indigo-700' : 'text-slate-700 hover:text-slate-900'}`
-                                }
-                            >
-                                Receipts
-                            </NavLink>
-                            <NavLink
-                                to="/profile"
-                                className={({ isActive }) =>
-                                    `text-sm ${isActive ? 'font-semibold text-indigo-700' : 'text-slate-700 hover:text-slate-900'}`
-                                }
-                            >
-                                Profile
-                            </NavLink>
-                        </nav>
                     </div>
-                    <div className="flex items-center gap-3 text-sm">
-                        <span className="hidden text-slate-700 sm:inline">Hi, {user?.name || 'User'}</span>
+
+                    {/* Center: Primary nav with icons + labels */}
+                    <nav className="flex items-center justify-center gap-10 md:gap-16">
+                        <NavLink to="/dashboard" className={navLinkCls}>
+                            <IconHome />
+                            <span className="text-[11px] leading-4">Home</span>
+                        </NavLink>
+                        <NavLink to="/receipts" className={navLinkCls}>
+                            <IconReceipt />
+                            <span className="text-[11px] leading-4">Receipts</span>
+                        </NavLink>
+                    </nav>
+
+                    {/* Right: Profile menu */}
+                    <div className="relative flex items-center justify-end">
                         <button
+                            ref={buttonRef}
                             type="button"
-                            onClick={logout}
-                            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-50"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-sm font-medium hover:bg-[rgb(var(--surface-hover))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
+                            aria-haspopup="menu"
+                            aria-expanded={menuOpen}
+                            aria-controls="profile-menu"
+                            onClick={() => setMenuOpen(v => !v)}
+                            title={user?.name ? `Account: ${user.name}` : 'Account'}
                         >
-                            Sign out
+                            <span aria-hidden="true">
+                                {user?.name ? user.name.split(' ').map(s => s[0]).join('').slice(0,2).toUpperCase() : '👤'}
+                            </span>
+                            <span className="sr-only">Open profile menu</span>
                         </button>
+                        {menuOpen && (
+                            <div
+                                id="profile-menu"
+                                role="menu"
+                                ref={menuRef}
+                                className="absolute right-0 top-full mt-2 z-50 w-44 overflow-hidden rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] py-1 shadow"
+                            >
+                                <button
+                                    role="menuitem"
+                                    className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))]"
+                                    onClick={() => { setMenuOpen(false); navigate('/profile') }}
+                                >
+                                    Profile
+                                </button>
+                                <div className="my-1 h-px bg-[rgb(var(--border))]" />
+                                <button
+                                    role="menuitem"
+                                    className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
+                                    onClick={() => { setMenuOpen(false); logout() }}
+                                >
+                                    Sign out
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </header>
 
-            {/* isolate creates a new stacking context so children can sit above other fixed elements if needed */}
-            <main id="main-content" className="isolate mx-auto max-w-6xl px-4 py-6">
+            <main id="main-content" className="isolate container-app page-content">
                 <Outlet />
             </main>
         </div>

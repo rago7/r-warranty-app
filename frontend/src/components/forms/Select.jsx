@@ -2,7 +2,10 @@ export default function Select({ label, options = [], hint, error, className = '
     return (
         <label className="grid gap-1 text-sm">
             {label && <span className="font-medium">{label}</span>}
-            <select {...props} className={`rounded-lg border border-slate-300 px-2 py-2 ${className}`}>
+            <select
+                {...props}
+                className={`w-full rounded-lg border border-[rgb(var(--border))] bg-white px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] ${className}`}
+            >
                 {options.map((opt) => (
                     <option key={opt.value ?? opt} value={opt.value ?? opt}>
                         {opt.label ?? opt}
