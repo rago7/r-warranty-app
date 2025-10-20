@@ -17,7 +17,7 @@ function StatusBadge({ status }) {
 export default function ReceiptCard({ receipt }) {
     const { prefs } = usePrefs()
     return (
-        <Link to={`/receipts/${receipt.id}`} className="grid grid-cols-[1fr_auto] gap-2 rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50">
+        <Link to={`/receipts/${receipt.id}`} className="card card-padded grid grid-cols-[1fr_auto] gap-2 transition-colors hover:bg-[rgb(var(--surface-hover))]">
             <div>
                 <div className="flex items-center gap-2">
                     <h3 className="text-base font-semibold">
@@ -25,7 +25,7 @@ export default function ReceiptCard({ receipt }) {
                     </h3>
                     <StatusBadge status={receipt.status} />
                 </div>
-                <div className="mt-1 text-sm text-slate-600">
+                <div className="mt-1 text-sm text-[rgb(var(--muted-fg))]">
                     <span>{receipt.merchant}</span>
                     <span className="mx-2">•</span>
                     <span>{formatDate(receipt.purchase_date, { timeZone: prefs.timezone, locale: prefs.locale })}</span>
@@ -34,7 +34,7 @@ export default function ReceiptCard({ receipt }) {
                 {receipt.tags?.length ? (
                     <div className="mt-2 flex flex-wrap gap-2">
                         {receipt.tags.map((t) => (
-                            <span key={t} className="rounded-md border border-slate-200 px-2 py-0.5 text-xs text-slate-700">{t}</span>
+                            <span key={t} className="rounded-md border border-[rgb(var(--border))] px-2 py-0.5 text-xs text-slate-700">{t}</span>
                         ))}
                     </div>
                 ) : null}

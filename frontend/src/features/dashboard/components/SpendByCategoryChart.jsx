@@ -11,7 +11,7 @@ export default function SpendByCategoryChart({ data, bare = false }) {
             {series.length === 0 ? (
                 <p className="text-sm text-slate-600">No data.</p>
             ) : (
-                <div className="grid gap-2">
+                <div className="list-relaxed">
                     {series.map((d) => (
                         <div key={d.category} className="grid grid-cols-[120px_1fr_64px] items-center gap-2 text-sm">
                             <div className="truncate text-slate-700 capitalize">{d.category}</div>

@@ -222,3 +222,48 @@ a:active { color: rgb(var(--primary-active)); }
 /* Card padding utility */
 :root { --card-pad: 1.25rem; }
 .card-padded { padding: var(--card-pad); }
+
+
+/* Relaxed list spacing for widgets */
+.list-relaxed { display: grid; gap: 0.75rem; }
+
+/* Filter label styling */
+.filter-label {
+  display: inline-block;
+  font-size: 0.9375rem; /* ~15px */
+  line-height: 1.4;
+  font-weight: 600;
+  background: rgb(var(--surface-hover));
+  color: rgb(var(--fg));
+  padding: 0.375rem 0.5rem; /* 6px 8px */
+  border-radius: 0.5rem;
+  margin-bottom: 0.375rem; /* space to the control below */
+}
+
+/* Receipts list spacing */
+.receipts-list { display: grid; gap: 1rem; margin-top: 1rem; }
+
+/* Sticky filters helper under the app header */
+:root { --header-h: 56px; } /* default header height; adjust if header size changes */
+.header-spacer { height: var(--header-h); }
+.sticky-filters {
+  position: sticky;
+  top: calc(var(--header-h) + 0.5rem); /* small spacing below header */
+  z-index: 30; /* below header (z-40) but above content */
+  background: rgb(var(--bg));
+  /* ensure the sticky block creates separation from the list below */
+  margin-bottom: 0.75rem;
+}
+
+/* Collapse helpers for filter card */
+.collapse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.collapse-chevron {
+  transition: transform var(--duration) var(--easing);
+}
+.collapse-chevron[aria-expanded="true"] { transform: rotate(180deg); }

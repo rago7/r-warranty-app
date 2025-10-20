@@ -51,7 +51,7 @@ export default function AppShell() {
     return (
         <div className="min-h-dvh bg-[rgb(var(--bg))] text-[rgb(var(--fg))]">
             <SkipLink />
-            <header className="sticky top-0 z-40 border-b border-[rgb(var(--border))] bg-[rgb(var(--card))]/80 backdrop-blur">
+            <header className="fixed left-1/2 top-0 z-50 w-full max-w-6xl -translate-x-1/2 rounded-b-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]/80 backdrop-blur shadow-sm">
                 <div className="container-app grid grid-cols-[1fr_auto_1fr] items-center py-2">
                     {/* Left: Logo */}
                     <div className="flex items-center">
@@ -116,6 +116,7 @@ export default function AppShell() {
                     </div>
                 </div>
             </header>
+            <div className="header-spacer" aria-hidden="true" />
 
             <main id="main-content" className="isolate container-app page-content">
                 <Outlet />

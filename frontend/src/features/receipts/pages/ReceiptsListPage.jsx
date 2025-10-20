@@ -50,9 +50,11 @@ export default function ReceiptsListPage() {
 
     return (
         <div>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="page-heading mb-3">
                 <h1 className="text-xl font-bold">Receipts</h1>
-                <Link to="/receipts/new" className="btn btn-primary">Add receipt</Link>
+                <div className="actions">
+                    <Link to="/receipts/new" className="btn btn-primary">Add receipt</Link>
+                </div>
             </div>
 
             <Filters
@@ -64,7 +66,7 @@ export default function ReceiptsListPage() {
             />
 
             {isLoading ? (
-                <div className="grid gap-3">
+                <div className="receipts-list">
                     {Array.from({ length: 5 }).map((_, i) => (
                         <Skeleton key={i} className="h-24" />
                     ))}
@@ -78,7 +80,7 @@ export default function ReceiptsListPage() {
                     No receipts match your filters.
                 </div>
             ) : (
-                <div className="grid gap-3">
+                <div className="receipts-list">
                     {items.map((r) => (
                         <ReceiptCard key={r.id} receipt={r} />
                     ))}

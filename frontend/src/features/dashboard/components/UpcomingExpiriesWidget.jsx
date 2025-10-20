@@ -13,7 +13,7 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
             {(!items || items.length === 0) ? (
                 <p className="text-sm text-slate-600">Nothing expiring soon.</p>
             ) : (
-                <ul className="grid gap-2">
+                <ul className="list-relaxed">
                     {items.map((r, i) => (
                         <li key={r.id || r.order_number || `${r.merchant}-${r.purchase_date}-${i}` }
                             className="flex items-center justify-between text-sm">
