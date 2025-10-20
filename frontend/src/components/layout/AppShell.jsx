@@ -106,7 +106,7 @@ export default function AppShell() {
                                 <div className="my-1 h-px bg-[rgb(var(--border))]" />
                                 <button
                                     role="menuitem"
-                                    className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
+                                    className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-[rgb(var(--danger))] hover:bg-[rgb(var(--danger)/0.1)]"
                                     onClick={() => { setMenuOpen(false); logout() }}
                                 >
                                     Sign out

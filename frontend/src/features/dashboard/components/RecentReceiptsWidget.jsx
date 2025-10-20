@@ -12,7 +12,7 @@ export default function RecentReceiptsWidget({ items, bare = false }) {
                 <h3 className="card-title">Recent receipts</h3>
             </div>
             {(!items || items.length === 0) ? (
-                <p className="text-sm text-slate-600">No recent receipts.</p>
+                <p className="text-sm text-[rgb(var(--muted-fg))]">No recent receipts.</p>
             ) : (
                 <ul className="list-relaxed">
                     {items.map((r, i) => (
@@ -22,7 +22,7 @@ export default function RecentReceiptsWidget({ items, bare = false }) {
                                 <Link to={`/receipts/${r.id}`} className="truncate font-medium hover:underline">
                                     {r.title || r.product_name}
                                 </Link>
-                                <div className="truncate text-slate-600">{r.merchant} • {formatDate(r.purchase_date, { timeZone: prefs.timezone, locale: prefs.locale })}</div>
+                                <div className="truncate text-[rgb(var(--muted-fg))]">{r.merchant} • {formatDate(r.purchase_date, { timeZone: prefs.timezone, locale: prefs.locale })}</div>
                             </div>
                             <div className="ml-3 shrink-0 font-medium">{formatMoney(r.total_amount, prefs.currency || r.currency, prefs.locale)}</div>
                         </li>
@@ -35,7 +35,7 @@ export default function RecentReceiptsWidget({ items, bare = false }) {
     if (bare) return content
 
     return (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
             {content}
         </div>
     )

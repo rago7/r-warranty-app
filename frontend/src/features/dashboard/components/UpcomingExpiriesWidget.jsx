@@ -11,7 +11,7 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
                 <h3 className="card-title">Upcoming expiries (60 days)</h3>
             </div>
             {(!items || items.length === 0) ? (
-                <p className="text-sm text-slate-600">Nothing expiring soon.</p>
+                <p className="text-sm text-[rgb(var(--muted-fg))]">Nothing expiring soon.</p>
             ) : (
                 <ul className="list-relaxed">
                     {items.map((r, i) => (
@@ -21,11 +21,11 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
                                 <Link to={`/receipts/${r.id}`} className="truncate font-medium hover:underline">
                                     {r.title || r.product_name}
                                 </Link>
-                                <div className="truncate text-slate-600">
+                                <div className="truncate text-[rgb(var(--muted-fg))]">
                                     {r.merchant} • {formatDate(r.purchase_date, { timeZone: prefs.timezone, locale: prefs.locale })}
                                 </div>
                             </div>
-                            <div className="ml-3 shrink-0 rounded-full border px-2 py-0.5 text-xs text-slate-700">
+                            <div className="ml-3 shrink-0 rounded-full border border-[rgb(var(--border))] px-2 py-0.5 text-xs text-[rgb(var(--muted-fg))]">
                                 {r.days_left}d left
                             </div>
                         </li>
@@ -38,7 +38,7 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
     if (bare) return content
 
     return (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
             {content}
         </div>
     )

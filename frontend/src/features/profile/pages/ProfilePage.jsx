@@ -35,15 +35,15 @@ export default function ProfilePage() {
         onError: (e) => toast({ title: 'Password not updated', description: e?.message || 'Unknown error', variant: 'error' })
     })
 
-    if (isLoading) return <div className="grid gap-3"><div className="h-8 animate-pulse rounded bg-slate-200" /><div className="h-40 animate-pulse rounded bg-slate-200" /></div>
-    if (isError) return <div className="rounded border border-rose-200 bg-rose-50 p-4 text-rose-800">Failed to load profile: {error?.message || 'Unknown error'}</div>
+    if (isLoading) return <div className="grid gap-3"><div className="h-8 animate-pulse rounded bg-[rgb(var(--border))]" /><div className="h-40 animate-pulse rounded bg-[rgb(var(--border))]" /></div>
+    if (isError) return <div className="rounded border border-[rgb(var(--danger)/0.3)] bg-[rgb(var(--danger)/0.1)] p-4 text-[rgb(var(--danger))]">Failed to load profile: {error?.message || 'Unknown error'}</div>
 
     return (
         <div className="grid gap-5">
             <h1 className="text-xl font-bold">Profile & Settings</h1>
 
             {/* Account */}
-            <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <section className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
                 <h2 className="font-semibold">Account</h2>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <Input label="Name" value={prof.name} onChange={(e) => profileMut.mutate({ name: e.target.value })} />
@@ -52,18 +52,18 @@ export default function ProfilePage() {
             </section>
 
             {/* Preferences */}
-            <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <section className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
                 <h2 className="font-semibold">Preferences</h2>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                     <Select label="Timezone" options={TZ_OPTS} value={prefs.timezone} onChange={(e) => setPrefs({ timezone: e.target.value })} />
                     <Select label="Currency" options={CURR_OPTS} value={prefs.currency} onChange={(e) => setPrefs({ currency: e.target.value })} />
                     <Input label="Locale" value={prefs.locale || ''} onChange={(e) => setPrefs({ locale: e.target.value })} hint="e.g., en-US, fr-FR" />
                 </div>
-                <div className="mt-2 text-xs text-slate-500">{isSaving ? 'Saving…' : 'Saved'}</div>
+                <div className="mt-2 text-xs text-[rgb(var(--muted-fg))]">{isSaving ? 'Saving…' : 'Saved'}</div>
             </section>
 
             {/* Security */}
-            <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <section className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
                 <h2 className="font-semibold">Security</h2>
                 <form
                     className="mt-3 grid gap-3 sm:max-w-md"

@@ -44,7 +44,7 @@ export default function LoginPage() {
         <div className="grid min-h-dvh place-items-center px-4">
             <div className="w-full max-w-md rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow">
                 <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-                <p className="mt-1 text-sm text-slate-600">Access your receipts and warranties securely.</p>
+                <p className="mt-1 text-sm text-[rgb(var(--muted-fg))]">Access your receipts and warranties securely.</p>
                 <form onSubmit={onSubmit} className="mt-4 grid gap-3">
                     <label className="grid gap-1 text-sm">
                         <span className="font-medium">Email</span>
@@ -78,10 +78,10 @@ export default function LoginPage() {
                                 {showPwd ? 'Hide' : 'Show'}
                             </button>
                         </div>
-                        <span className="mt-1 text-xs text-slate-500">Use a strong password and keep it private.</span>
+                        <span className="mt-1 text-xs text-[rgb(var(--muted-fg))]">Use a strong password and keep it private.</span>
                     </label>
                     {error && (
-                        <div className="rounded-lg border border-rose-200 bg-rose-50 p-2 text-sm text-rose-800">
+                        <div className="rounded-lg border border-[rgb(var(--danger)/0.3)] bg-[rgb(var(--danger)/0.1)] p-2 text-sm text-[rgb(var(--danger))]">
                             {error}
                         </div>
                     )}
@@ -92,8 +92,8 @@ export default function LoginPage() {
                     >
                         {submitting ? 'Signing in…' : 'Sign in'}
                     </button>
-                    <div className="mt-1 text-xs text-slate-600">
-                        Trouble signing in? <a href="mailto:support@warranty.test" className="font-medium text-indigo-700 hover:underline">Contact support</a>.
+                    <div className="mt-1 text-xs text-[rgb(var(--muted-fg))]">
+                        Trouble signing in? <a href="mailto:support@warranty.test" className="font-medium text-[rgb(var(--primary))] hover:underline">Contact support</a>.
                     </div>
                 </form>
             </div>

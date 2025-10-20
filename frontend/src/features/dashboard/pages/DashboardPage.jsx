@@ -17,12 +17,12 @@ export default function DashboardPage() {
     if (isLoading) {
         return (
             <div className="grid gap-4">
-                <div className="h-6 w-48 animate-pulse rounded bg-slate-200" />
+                <div className="h-6 w-48 animate-pulse rounded bg-[rgb(var(--border))]" />
                 <div className="grid gap-8 grid-cols-1 sm:grid-cols-2">
-                    <div className="h-40 animate-pulse rounded bg-slate-200" />
-                    <div className="h-40 animate-pulse rounded bg-slate-200" />
-                    <div className="h-40 animate-pulse rounded bg-slate-200" />
-                    <div className="h-40 animate-pulse rounded bg-slate-200" />
+                    <div className="h-40 animate-pulse rounded bg-[rgb(var(--border))]" />
+                    <div className="h-40 animate-pulse rounded bg-[rgb(var(--border))]" />
+                    <div className="h-40 animate-pulse rounded bg-[rgb(var(--border))]" />
+                    <div className="h-40 animate-pulse rounded bg-[rgb(var(--border))]" />
                 </div>
             </div>
         )
@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
     if (isError) {
         return (
-            <div className="rounded border border-rose-200 bg-rose-50 p-4 text-rose-800">
+            <div className="rounded border border-[rgb(var(--danger)/0.3)] bg-[rgb(var(--danger)/0.1)] p-4 text-[rgb(var(--danger))]">
                 Failed to load dashboard: {error?.message || 'Unknown error'}
             </div>
         )

@@ -53,7 +53,7 @@ export default function ReceiptsListPage() {
             <div className="page-heading mb-3">
                 <h1 className="text-xl font-bold">Receipts</h1>
                 <div className="actions">
-                    <Link to="/receipts/new" className="btn btn-primary">Add receipt</Link>
+                    <Link to="/receipts/new" className="btn btn-accent">Add receipt</Link>
                 </div>
             </div>
 
@@ -72,11 +72,11 @@ export default function ReceiptsListPage() {
                     ))}
                 </div>
             ) : isError ? (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-800">
+                <div className="rounded-lg border border-[rgb(var(--danger)/0.3)] bg-[rgb(var(--danger)/0.1)] p-4 text-[rgb(var(--danger))]">
                     Failed to load receipts: {error?.message || 'Unknown error'}
                 </div>
             ) : items.length === 0 ? (
-                <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-slate-600">
+                <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-8 text-center text-[rgb(var(--muted-fg))]">
                     No receipts match your filters.
                 </div>
             ) : (
@@ -87,7 +87,7 @@ export default function ReceiptsListPage() {
                 </div>
             )}
 
-            <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+            <div className="mt-4 flex items-center justify-between text-sm text-[rgb(var(--muted-fg))]">
                 <div>
                     {total > 0 && (
                         <span>
