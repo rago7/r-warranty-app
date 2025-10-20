@@ -72,7 +72,7 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
                                         <button
                                             aria-label="Previous"
                                             onClick={prev}
-                                            className="absolute left-0 top-1/2 -translate-y-1/2 -ml-2 rounded-full bg-white/80 p-1 shadow hover:bg-white"
+                                            className="absolute left-0 top-1/2 -translate-y-1/2 -ml-2 rounded-full p-1 shadow border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))]"
                                             style={{ transformOrigin: 'center', marginLeft: '-10px' }}
                                         >
                                             ‹
@@ -81,7 +81,7 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
                                         <button
                                             aria-label="Next"
                                             onClick={next}
-                                            className="absolute right-0 top-1/2 -translate-y-1/2 -mr-2 rounded-full bg-white/80 p-1 shadow hover:bg-white"
+                                            className="absolute right-0 top-1/2 -translate-y-1/2 -mr-2 rounded-full p-1 shadow border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))]"
                                             style={{ transformOrigin: 'center', marginRight: '-10px' }}
                                         >
                                             ›
