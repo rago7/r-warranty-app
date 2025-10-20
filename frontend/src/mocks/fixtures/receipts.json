@@ -37,7 +37,7 @@
       "category": "tools",
       "tags": ["garage"],
       "status": "in_warranty",
-      "warranty": {"start_date": "2025-03-12", "end_date": "2026-03-12", "provider": "DeWalt"}
+      "warranty": {"start_date": "2025-03-12", "end_date": "2025-11-12", "provider": "DeWalt"}
     },
     {
       "id": "r004",

@@ -57,6 +57,11 @@ function filterAndSort(list, params) {
         items = items.filter((r) => r.category === category)
     }
 
+    const status = params.get('status') || 'all'
+    if (status && status !== 'all') {
+        items = items.filter((r) => r.status === status)
+    }
+
     if (sort === 'date_desc' || sort === 'date_asc') {
         items.sort((a, b) => new Date(a.purchase_date) - new Date(b.purchase_date))
         if (sort === 'date_desc') items.reverse()

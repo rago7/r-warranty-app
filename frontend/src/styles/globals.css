@@ -247,7 +247,8 @@ a:active { color: rgb(var(--primary-active)); }
 
 /* Filter label styling */
 .filter-label {
-  display: inline-block;
+  display: block;
+  width: fit-content;
   font-size: 0.9375rem; /* ~15px */
   line-height: 1.4;
   font-weight: 600;
