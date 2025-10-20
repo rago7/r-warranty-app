@@ -28,6 +28,22 @@ export default function AppShell() {
     const buttonRef = useRef(null)
     const navigate = useNavigate()
 
+    // Theme: light/dark persistence and application
+    const [darkMode, setDarkMode] = useState(() => {
+        try {
+            const saved = localStorage.getItem('theme')
+            if (saved === 'dark') return true
+            if (saved === 'light') return false
+        } catch {}
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    })
+    useEffect(() => {
+        const root = document.documentElement
+        if (darkMode) root.setAttribute('data-theme', 'dark')
+        else root.setAttribute('data-theme', 'light')
+        try { localStorage.setItem('theme', darkMode ? 'dark' : 'light') } catch {}
+    }, [darkMode])
+
     const navLinkCls = ({ isActive }) => `flex flex-col items-center rounded-md px-3 py-1.5 text-sm ${isActive ? 'text-[rgb(var(--primary))] bg-[rgb(var(--primary)/0.08)]' : 'text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))]'}`
 
     useEffect(() => {
@@ -102,6 +118,14 @@ export default function AppShell() {
                                     onClick={() => { setMenuOpen(false); navigate('/profile') }}
                                 >
                                     Profile
+                                </button>
+                                <button
+                                    role="menuitem"
+                                    className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))]"
+                                    onClick={() => setDarkMode(v => !v)}
+                                    aria-pressed={darkMode}
+                                >
+                                    {darkMode ? 'Dark mode: On' : 'Dark mode: Off'}
                                 </button>
                                 <div className="my-1 h-px bg-[rgb(var(--border))]" />
                                 <button

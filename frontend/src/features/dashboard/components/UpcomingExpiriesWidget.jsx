@@ -7,9 +7,7 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
 
     const content = (
         <>
-            <div className="mb-2 flex items-center justify-between">
-                <h3 className="card-title">Upcoming expiries (60 days)</h3>
-            </div>
+            <h3 className="card-title">Upcoming expiries (60 days)</h3>
             {(!items || items.length === 0) ? (
                 <p className="text-sm text-[rgb(var(--muted-fg))]">Nothing expiring soon.</p>
             ) : (

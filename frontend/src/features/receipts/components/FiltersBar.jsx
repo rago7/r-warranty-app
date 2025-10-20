@@ -60,7 +60,7 @@ export default function FiltersBar({ q, category, status, sort, pageSize, onAppl
                             <label className="filter-label">Search</label>
                             <div className="mt-1 flex items-center gap-3">
                                 <input
-                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-white px-4 py-3 text-base text-[rgb(var(--fg))] placeholder:text-slate-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
+                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 py-3 text-base text-[rgb(var(--fg))] placeholder:text-slate-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
                                     placeholder="merchant, product, tags…"
                                     value={text}
                                     onChange={(e) => setText(e.target.value)}
@@ -76,7 +76,7 @@ export default function FiltersBar({ q, category, status, sort, pageSize, onAppl
                             <div>
                                 <label className="filter-label">Category</label>
                                 <select
-                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-white px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-44"
+                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-44"
                                     value={category || 'all'}
                                     onChange={(e) => onCategoryChange(e.target.value)}
                                 >
@@ -87,7 +87,7 @@ export default function FiltersBar({ q, category, status, sort, pageSize, onAppl
                             <div>
                                 <label className="filter-label">Status</label>
                                 <select
-                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-white px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-44"
+                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-44"
                                     value={status || 'all'}
                                     onChange={(e) => onStatusChange(e.target.value)}
                                 >
@@ -98,7 +98,7 @@ export default function FiltersBar({ q, category, status, sort, pageSize, onAppl
                             <div>
                                 <label className="filter-label">Sort</label>
                                 <select
-                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-white px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-48"
+                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-48"
                                     value={sort || 'date_desc'}
                                     onChange={(e) => onSortChange(e.target.value)}
                                 >
@@ -109,7 +109,7 @@ export default function FiltersBar({ q, category, status, sort, pageSize, onAppl
                             <div>
                                 <label className="filter-label">Per page</label>
                                 <select
-                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-white px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-28"
+                                    className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-2 py-2 text-[rgb(var(--fg))] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))] sm:w-28"
                                     value={String(pageSize || 10)}
                                     onChange={(e) => onPageSizeChange(Number(e.target.value))}
                                 >

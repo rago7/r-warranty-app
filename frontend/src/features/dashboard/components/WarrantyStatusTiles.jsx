@@ -15,7 +15,7 @@ export default function WarrantyStatusTiles({ totals }) {
                     to={b.url}
                     className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 shadow transition-colors hover:bg-[rgb(var(--surface-hover))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary)/0.4)]"
                 >
-                    <div className="text-sm text-slate-500">{b.label}</div>
+                    <div className="text-sm text-[rgb(var(--muted-fg))]">{b.label}</div>
                     <div className="text-2xl font-bold">{totals?.[b.key] ?? 0}</div>
                 </Link>
             ))}

@@ -29,10 +29,10 @@ export default function ReceiptCard({ receipt }) {
             <div className="card-padded grid grid-cols-[1fr_auto] gap-2">
                 <div>
                     <div className="text-sm text-[rgb(var(--muted-fg))]">
-                        <span>{receipt.merchant}</span>
+                        <span><span className="font-medium">Purchased At</span>: {receipt.merchant}</span>
                         <span className="mx-2">•</span>
-                        <span>{formatDate(receipt.purchase_date, { timeZone: prefs.timezone, locale: prefs.locale })}</span>
-                        {receipt.category ? <><span className="mx-2">•</span><span className="capitalize">{receipt.category}</span></> : null}
+                        <span><span className="font-medium">Date</span>: {formatDate(receipt.purchase_date, { timeZone: prefs.timezone, locale: prefs.locale })}</span>
+                        {receipt.category ? <><span className="mx-2">•</span><span><span className="font-medium">Category</span>: <span className="capitalize">{receipt.category}</span></span></> : null}
                     </div>
                     {receipt.tags?.length ? (
                         <div className="mt-2 flex flex-wrap gap-2">

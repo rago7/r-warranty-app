@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getReceipt, deleteReceipt } from '../api'
 import Skeleton from '../../../components/feedback/Skeleton'
-import { formatDate } from '../../../lib/date'
+import { formatDate, formatTime } from '../../../lib/date'
 import { formatMoney } from '../../../lib/currency'
 import { warrantyInfo } from '../../../lib/warranty'
 import AttachmentItem from '../components/AttachmentItem'
@@ -161,6 +161,14 @@ export default function ReceiptDetailPage() {
                                 {formatDate(r.purchase_date, { timeZone: prefs.timezone, locale: prefs.locale })}
                             </dd>
                         </div>
+                        {r.purchase_time && (
+                            <div>
+                                <dt className="text-[rgb(var(--muted-fg))]">Time</dt>
+                                <dd className="font-medium">
+                                    {formatTime(r.purchase_time, { timeZone: prefs.timezone, locale: prefs.locale })}
+                                </dd>
+                            </div>
+                        )}
                         {r.serial_number && (
                             <div>
                                 <dt className="text-[rgb(var(--muted-fg))]">Serial #</dt>

@@ -8,6 +8,7 @@ import DatePicker from '../../../components/forms/DatePicker'
 import Skeleton from '../../../components/feedback/Skeleton'
 import { useToast } from '../../../app/providers/ToastProvider.jsx'
 import useTitle from '../../../lib/useTitle'
+import ConfirmDialog from '../../../components/feedback/ConfirmDialog.jsx'
 
 const CATEGORIES = [
     { value: 'electronics', label: 'Electronics' },
@@ -25,6 +26,7 @@ function emptyReceipt() {
         product_name: '',
         merchant: '',
         purchase_date: '',
+        purchase_time: '',
         total_amount: '',
         currency: 'USD',
         category: 'electronics',
@@ -61,11 +63,17 @@ export default function ReceiptFormPage({ mode = 'create' }) {
     const [dirty, setDirty] = useState(false)
     const [uploading, setUploading] = useState([])
 
+    // confirm dialog when purchase_time is missing
+    const [showTimeConfirm, setShowTimeConfirm] = useState(false)
+    const [pendingPayload, setPendingPayload] = useState(null) // { type: 'create'|'update', payload }
+
     useEffect(() => {
         if (!isCreate && existing) {
             setForm({
                 ...emptyReceipt(),
                 ...existing,
+                // keep purchase_time input blank on edit; existing value will be preserved unless user sets a new time
+                purchase_time: '',
                 tags: existing.tags || [],
                 warranty: { ...emptyReceipt().warranty, ...(existing.warranty || {}) },
             })
@@ -141,6 +149,28 @@ export default function ReceiptFormPage({ mode = 'create' }) {
                 .filter(Boolean),
         }
 
+        // If user provided a purchase time, combine with date into ISO; otherwise, omit
+        if (form.purchase_time) {
+            try {
+                const time = form.purchase_time.length === 5 ? `${form.purchase_time}:00` : form.purchase_time
+                const iso = new Date(`${form.purchase_date}T${time}`).toISOString()
+                payload.purchase_time = iso
+            } catch {}
+        }
+
+        // If purchase time is missing, show confirmation dialog before submitting
+        if (!form.purchase_time) {
+            if (isCreate) {
+                setPendingPayload({ type: 'create', payload })
+                setShowTimeConfirm(true)
+                return
+            } else if (!existing?.purchase_time) { // only warn on edit if original had no time
+                setPendingPayload({ type: 'update', payload })
+                setShowTimeConfirm(true)
+                return
+            }
+        }
+
         if (isCreate) createMut.mutate(payload)
         else updateMut.mutate({ id, payload })
     }
@@ -189,6 +219,7 @@ export default function ReceiptFormPage({ mode = 'create' }) {
 
                     <Input label="Merchant" value={form.merchant} onChange={(e) => updateField('merchant', e.target.value)} error={errors.merchant} />
                     <DatePicker label="Purchase date" value={form.purchase_date} onChange={(e) => updateField('purchase_date', e.target.value)} error={errors.purchase_date} />
+                    <Input label="Purchase time" type="time" value={form.purchase_time || ''} onChange={(e) => updateField('purchase_time', e.target.value)} hint="Optional" />
 
                     <Input label="Amount" type="number" step="0.01" value={form.total_amount} onChange={(e) => updateField('total_amount', e.target.value)} error={errors.total_amount} />
                     <Select label="Currency" value={form.currency} onChange={(e) => updateField('currency', e.target.value)} options={CURRENCIES} />
@@ -230,6 +261,27 @@ export default function ReceiptFormPage({ mode = 'create' }) {
                     </div>
                 )}
             </section>
+
+            {/* Time missing confirm dialog */}
+            <ConfirmDialog
+                open={showTimeConfirm}
+                title="No purchase time provided"
+                description="You didn't provide a purchase time. If you submit now, the current time will be taken as the purchase time by default."
+                confirmText={isCreate ? (createMut.isPending ? 'Submitting…' : 'Submit') : (updateMut.isPending ? 'Saving…' : 'Save')}
+                cancelText="Continue editing"
+                onCancel={() => { setShowTimeConfirm(false); setPendingPayload(null) }}
+                onConfirm={() => {
+                    const pending = pendingPayload
+                    setShowTimeConfirm(false)
+                    if (!pending) return
+                    if (pending.type === 'create') {
+                        createMut.mutate(pending.payload)
+                    } else {
+                        updateMut.mutate({ id, payload: pending.payload })
+                    }
+                    setPendingPayload(null)
+                }}
+            />
         </div>
     )
 }
