@@ -157,7 +157,7 @@ body {
 
 /* Interactive links */
 a { color: rgb(var(--primary)); text-decoration: none; transition: color var(--duration) var(--easing), background-color var(--duration) var(--easing); }
-a:hover { color: rgb(var(--primary-hover)); text-decoration: underline; }
+a:hover { color: rgb(var(--primary-hover)); }
 a:active { color: rgb(var(--primary-active)); }
 
 /* Button primitives */
