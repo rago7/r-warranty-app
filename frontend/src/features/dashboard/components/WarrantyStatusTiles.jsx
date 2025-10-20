@@ -8,7 +8,7 @@ export default function WarrantyStatusTiles({ totals }) {
         { key: 'unknown', label: 'Unknown', url: '/receipts?status=unknown' },
     ]
     return (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 p-3">
             {blocks.map((b) => (
                 <Link 
                     key={b.key} 
