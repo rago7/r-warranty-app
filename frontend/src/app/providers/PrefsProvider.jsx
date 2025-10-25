@@ -26,30 +26,30 @@ export default function PrefsProvider({ children }) {
     const mutation = useMutation({
         mutationFn: (partial) => updateProfile({ preferences: { ...prefs, ...partial } }),
         onMutate: async (partial) => {
-        const next = { ...(prefs || {}), ...(partial || {}) }
+            const next = { ...(prefs || {}), ...(partial || {}) }
             // optimistic local apply
             setLocalPrefs(next)
             localStorage.setItem('prefs', JSON.stringify(next))
             const previous = qc.getQueryData(['profile'])
             qc.setQueryData(['profile'], (old) => ({ ...(old || {}), preferences: next }))
             return { previous }
-            },
+        },
         onError: (_err, _vars, ctx) => {
-        if (ctx?.previous) qc.setQueryData(['profile'], ctx.previous)
+            if (ctx?.previous) qc.setQueryData(['profile'], ctx.previous)
         },
         onSuccess: (data) => {
-        const next = data.preferences
+            const next = data.preferences
             setLocalPrefs(next)
             localStorage.setItem('prefs', JSON.stringify(next))
             qc.setQueryData(['profile'], (old) => ({ ...(old || {}), preferences: next }))
-            },
-        })
+        },
+    })
 
     const value = useMemo(() => ({
         prefs: prefs || { currency: 'USD', timezone: 'UTC', locale: (typeof navigator !== 'undefined' ? navigator.language : 'en-US') },
         setPrefs: (partial) => mutation.mutate(partial),
         isSaving: mutation.isPending,
-    }), [prefs, mutation.isPending])
+    }), [prefs, mutation])
 
     return <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>
 }

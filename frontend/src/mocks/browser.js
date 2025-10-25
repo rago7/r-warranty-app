@@ -2,11 +2,13 @@ import { setupWorker } from "msw/browser";
 import { authHandlers } from "./handlers/authHandlers";
 import { receiptHandlers } from "./handlers/receiptHandlers";
 import { dashboardHandlers } from "./handlers/dashboardHandlers";
-import {profileHandlers} from "./handlers/profileHandlers"; // NEW
+import { profileHandlers } from "./handlers/profileHandlers";
+import { purchaseHandlers } from "./handlers/purchaseHandlers"; // NEW
 
 export const worker = setupWorker(
-    ...authHandlers,
-    ...receiptHandlers,
-    ...dashboardHandlers,
-    ...profileHandlers,
+  ...authHandlers,
+  ...receiptHandlers,
+  ...purchaseHandlers,
+  ...dashboardHandlers,
+  ...profileHandlers
 );

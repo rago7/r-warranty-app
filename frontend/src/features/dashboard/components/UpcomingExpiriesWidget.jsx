@@ -43,7 +43,8 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
             ) : (
                 <div className="relative">
                     {/* Carousel viewport */}
-                    <div className="flex items-stretch gap-3 mt-2">
+                    {/* Use items-start so the carousel doesn't stretch vertically; this keeps the arrow buttons centered to the item card */}
+                    <div className="flex items-start gap-3 mt-2">
                         <div className="flex-1 p-3">
                             {/* make this wrapper relative so arrows align with the card content */}
                             <div className="relative">
@@ -52,7 +53,7 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
                                     {safeItems[index] && (
                                         <div className="flex items-center justify-between">
                                             <div className="min-w-0">
-                                                <Link to={`/receipts/${safeItems[index].id}`} className="truncate font-medium hover:underline">
+                                                <Link to={`/purchases/${safeItems[index].id}`} className="truncate font-medium hover:underline">
                                                     {safeItems[index].title || safeItems[index].product_name}
                                                 </Link>
                                                 <div className="truncate text-[rgb(var(--muted-fg))] text-sm">
@@ -66,25 +67,23 @@ export default function UpcomingExpiriesWidget({ items, bare = false }) {
                                     )}
                                 </div>
 
-                                {/* Prev / Next controls moved inside this relative wrapper so they center on the item line */}
+                                {/* Prev / Next controls: positioned so they align to the middle of the item card and sit slightly outside the card border */}
                                 {count > 1 && (
                                     <>
                                         <button
                                             aria-label="Previous"
                                             onClick={prev}
-                                            className="absolute left-0 top-1/2 -translate-y-1/2 -ml-2 rounded-full p-1 shadow border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))]"
-                                            style={{ transformOrigin: 'center', marginLeft: '-10px' }}
+                                            className="absolute top-1/2 -translate-y-1/2 -left-3 z-10 rounded-full p-1 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
                                         >
-                                            ‹
+                                            <span aria-hidden>‹</span>
                                         </button>
 
                                         <button
                                             aria-label="Next"
                                             onClick={next}
-                                            className="absolute right-0 top-1/2 -translate-y-1/2 -mr-2 rounded-full p-1 shadow border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))]"
-                                            style={{ transformOrigin: 'center', marginRight: '-10px' }}
+                                            className="absolute top-1/2 -translate-y-1/2 -right-3 z-10 rounded-full p-1 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--fg))] hover:bg-[rgb(var(--surface-hover))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
                                         >
-                                            ›
+                                            <span aria-hidden>›</span>
                                         </button>
                                     </>
                                 )}
