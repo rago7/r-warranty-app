@@ -1,30 +1,41 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
-import { listReceipts } from '../api'
 import ReceiptCard from '../components/ReceiptCard'
 import Skeleton from '../../../components/feedback/Skeleton'
 import useTitle from '../../../lib/useTitle'
-import FiltersBar from "../components/FiltersBar.jsx";
+import FiltersBar from '../components/FiltersBar.jsx'
+import { useReceipts } from '../hooks/useReceipts'
 
 function useFilters() {
     const [sp, setSp] = useSearchParams()
-    const filters = useMemo(() => ({
-        q: sp.get('q') || '',
-        category: sp.get('category') || 'all',
-        status: sp.get('status') || 'all',
-        sort: sp.get('sort') || 'date_desc',
-        page: Number(sp.get('page') || '1'),
-        page_size: Number(sp.get('page_size') || '10'),
-    }), [sp])
+    const filters = useMemo(
+        () => ({
+            q: sp.get('q') || '',
+            category: sp.get('category') || 'all',
+            status: sp.get('status') || 'all',
+            sort: sp.get('sort') || 'date_desc',
+            page: Number(sp.get('page') || '1'),
+            page_size: Number(sp.get('page_size') || '10'),
+        }),
+        [sp],
+    )
 
     const set = (patch) => {
         const next = new URLSearchParams(sp)
         Object.entries(patch).forEach(([k, v]) => {
-            if (v === undefined || v === null || v === '' || v === 'all') next.delete(k)
-            else next.set(k, String(v))
+            if (v === undefined || v === null || v === '' || v === 'all') {
+                next.delete(k)
+            } else {
+                next.set(k, String(v))
+            }
         })
-        if (patch.q !== undefined || patch.category !== undefined || patch.status !== undefined || patch.page_size !== undefined || patch.sort !== undefined) {
+        if (
+            patch.q !== undefined ||
+            patch.category !== undefined ||
+            patch.status !== undefined ||
+            patch.page_size !== undefined ||
+            patch.sort !== undefined
+        ) {
             next.set('page', '1')
         }
         setSp(next, { replace: true })
@@ -33,28 +44,52 @@ function useFilters() {
     return [filters, set]
 }
 
+function mapSort(sort) {
+    switch (sort) {
+        case 'date_asc':
+            return 'purchase_at'
+        case 'amount_desc':
+            return '-total_cents'
+        case 'amount_asc':
+            return 'total_cents'
+        case 'date_desc':
+        default:
+            return '-purchase_at'
+    }
+}
+
 export default function ReceiptsListPage() {
     useTitle('Receipts')
     const [filters, setFilters] = useFilters()
 
-    const query = useQuery({
-        queryKey: ['receipts', filters],
-        queryFn: () => listReceipts(filters),
-        keepPreviousData: true,
-    })
+    const queryFilters = useMemo(() => {
+        const params = {
+            page: filters.page,
+            page_size: filters.page_size,
+            sort: mapSort(filters.sort),
+        }
+        if (filters.q) params.q = filters.q
+        if (filters.category && filters.category !== 'all') params.category = filters.category
+        if (filters.status && filters.status !== 'all') params.warranty_status = filters.status
+        return params
+    }, [filters])
 
+    const query = useReceipts(queryFilters)
     const { data, isLoading, isError, error, isFetching } = query
-    const items = data?.items || []
-    const total = data?.total || 0
-    const page = data?.page || filters.page
-    const pageSize = data?.page_size || filters.page_size
+
+    const items = data?.items ?? []
+    const total = data?.total ?? 0
+    const page = data?.page ?? filters.page
+    const pageSize = data?.pageSize ?? filters.page_size
 
     return (
         <div>
             <div className="page-heading mb-3">
                 <h1 className="text-xl font-bold">Receipts</h1>
                 <div className="actions">
-                    <Link to="/receipts/new" className="btn btn-accent">Add receipt</Link>
+                    <Link to="/receipts/new" className="btn btn-accent">
+                        Add receipt
+                    </Link>
                 </div>
             </div>
 
@@ -84,7 +119,7 @@ export default function ReceiptsListPage() {
             ) : (
                 <div className="receipts-list">
                     {items.map((r) => (
-                        <ReceiptCard key={r.id} receipt={r} />
+                        <ReceiptCard key={r.id ?? r.receiptId} receipt={r} />
                     ))}
                 </div>
             )}
@@ -93,9 +128,9 @@ export default function ReceiptsListPage() {
                 <div>
                     {total > 0 && (
                         <span>
-              Showing <strong>{(page - 1) * pageSize + 1}</strong>–
-              <strong>{Math.min(page * pageSize, total)}</strong> of <strong>{total}</strong>
-            </span>
+                            Showing <strong>{(page - 1) * pageSize + 1}</strong>–
+                            <strong>{Math.min(page * pageSize, total)}</strong> of <strong>{total}</strong>
+                        </span>
                     )}
                     {isFetching && <span className="ml-2 italic">(updating…)</span>}
                 </div>
@@ -121,7 +156,6 @@ export default function ReceiptsListPage() {
 }
 
 function Filters({ filters, onApply, onCategoryChange, onStatusChange, onSortChange, onPageSizeChange }) {
-    // const FiltersBar = require('../components/FiltersBar').default
     return (
         <div>
             <FiltersBar

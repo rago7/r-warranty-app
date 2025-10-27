@@ -1,6 +1,4 @@
 import http from '../../../services/http'
 
-export async function getDashboardSummary() {
-    const { data } = await http.get('/dashboard/summary')
-    return data
-}
+export const getDashboardSummary = (params) =>
+    http.get('/dashboard/summary', { params }).then((response) => response.data)
