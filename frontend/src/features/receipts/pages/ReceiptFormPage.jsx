@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createReceipt, getReceipt, updateReceipt, uploadReceiptAttachment } from '../api'
@@ -43,6 +43,45 @@ function emptyReceipt() {
     }
 }
 
+function adaptReceiptForForm(raw) {
+    if (!raw) return raw
+    if (raw.data && raw.data.attributes) {
+        const attrs = raw.data.attributes
+        const base = emptyReceipt()
+        const firstItem = Array.isArray(attrs.line_items) ? attrs.line_items[0] : null
+        const firstWarranty = Array.isArray(attrs.warranties) ? attrs.warranties[0] : null
+        const purchaseAt = attrs.purchase?.purchase_at ?? ''
+        const totalCents = Number(attrs.purchase?.total_cents)
+        const totalAmount = Number.isFinite(totalCents) ? (totalCents / 100).toFixed(2) : ''
+
+        return {
+            ...base,
+            id: raw.data.id ?? base.id,
+            title: firstItem?.name || base.title,
+            product_name: firstItem?.name || base.product_name,
+            merchant: attrs.merchant?.name || base.merchant,
+            purchase_date: purchaseAt ? purchaseAt.slice(0, 10) : base.purchase_date,
+            purchase_time: '',
+            total_amount: totalAmount,
+            currency: attrs.purchase?.currency || base.currency,
+            category: firstItem?.category_id || base.category,
+            tags: base.tags,
+            serial_number: base.serial_number,
+            order_number: base.order_number,
+            warranty: {
+                ...base.warranty,
+                start_date: firstWarranty?.start_date ?? base.warranty.start_date,
+                end_date: firstWarranty?.end_date ?? base.warranty.end_date,
+                provider: firstWarranty?.provider ?? base.warranty.provider,
+                policy_ref: firstWarranty?.policy_ref ?? base.warranty.policy_ref,
+                coverage_notes: firstWarranty?.coverage_notes ?? base.warranty.coverage_notes,
+            },
+            __original_purchase_time: purchaseAt || null,
+        }
+    }
+    return raw
+}
+
 export default function ReceiptFormPage({ mode = 'create' }) {
     useTitle(mode === 'create' ? 'Add Receipt' : 'Edit Receipt')
     const { toast } = useToast()
@@ -56,13 +95,12 @@ export default function ReceiptFormPage({ mode = 'create' }) {
         enabled: !isCreate,
         queryKey: ['receipt', id],
         queryFn: () => getReceipt(id),
+        select: adaptReceiptForForm,
     })
 
     const [form, setForm] = useState(emptyReceipt())
     const [errors, setErrors] = useState({})
     const [dirty, setDirty] = useState(false)
-    const [uploading, setUploading] = useState([])
-
     // confirm dialog when purchase_time is missing
     const [showTimeConfirm, setShowTimeConfirm] = useState(false)
     const [pendingPayload, setPendingPayload] = useState(null) // { type: 'create'|'update', payload }
@@ -113,13 +151,23 @@ export default function ReceiptFormPage({ mode = 'create' }) {
         return Object.keys(e).length === 0
     }
 
+    const invalidateReceiptsData = () => {
+        qc.invalidateQueries({ queryKey: ['receipts'] })
+        qc.invalidateQueries({ queryKey: ['dashboard', 'summary'] })
+    }
+
     const createMut = useMutation({
         mutationFn: (payload) => createReceipt(payload),
         onSuccess: (created) => {
+            const createdId = created?.data?.id ?? created?.id
+            const attributes = created?.data?.attributes ?? {}
+            const lineItemName = attributes.line_items?.[0]?.name
+            const merchantName = attributes.merchant?.name
+            const label = created?.title || created?.product_name || lineItemName || merchantName || 'Receipt'
             setDirty(false)
-            qc.invalidateQueries({ queryKey: ['receipts'] })
-            toast({ title: 'Receipt created', description: created.title || created.product_name, variant: 'success' })
-            navigate(`/receipts/${created.id}`)
+            invalidateReceiptsData()
+            toast({ title: 'Receipt created', description: label, variant: 'success' })
+            navigate(`/receipts/${createdId}`)
         },
         onError: (e) => toast({ title: 'Failed to create', description: e?.message || 'Unknown error', variant: 'error' })
     })
@@ -127,11 +175,16 @@ export default function ReceiptFormPage({ mode = 'create' }) {
     const updateMut = useMutation({
         mutationFn: ({ id, payload }) => updateReceipt(id, payload),
         onSuccess: (updated) => {
+            const updatedId = updated?.data?.id ?? updated?.id
+            const attributes = updated?.data?.attributes ?? {}
+            const lineItemName = attributes.line_items?.[0]?.name
+            const merchantName = attributes.merchant?.name
+            const label = updated?.title || updated?.product_name || lineItemName || merchantName || 'Receipt'
             setDirty(false)
-            qc.invalidateQueries({ queryKey: ['receipts'] })
-            qc.invalidateQueries({ queryKey: ['receipt', updated.id] })
-            toast({ title: 'Changes saved', description: updated.title || updated.product_name, variant: 'success' })
-            navigate(`/receipts/${updated.id}`)
+            invalidateReceiptsData()
+            qc.invalidateQueries({ queryKey: ['receipt', updatedId] })
+            toast({ title: 'Changes saved', description: label, variant: 'success' })
+            navigate(`/receipts/${updatedId}`)
         },
         onError: (e) => toast({ title: 'Failed to save', description: e?.message || 'Unknown error', variant: 'error' })
     })
@@ -149,45 +202,48 @@ export default function ReceiptFormPage({ mode = 'create' }) {
                 .filter(Boolean),
         }
 
+        const { __original_purchase_time, ...cleanPayload } = payload
+
         // If user provided a purchase time, combine with date into ISO; otherwise, omit
         if (form.purchase_time) {
             try {
                 const time = form.purchase_time.length === 5 ? `${form.purchase_time}:00` : form.purchase_time
                 const iso = new Date(`${form.purchase_date}T${time}`).toISOString()
-                payload.purchase_time = iso
-            } catch {}
+                cleanPayload.purchase_time = iso
+            } catch {
+                // ignore invalid time inputs
+            }
         }
 
         // If purchase time is missing, show confirmation dialog before submitting
         if (!form.purchase_time) {
             if (isCreate) {
-                setPendingPayload({ type: 'create', payload })
+                setPendingPayload({ type: 'create', payload: cleanPayload })
                 setShowTimeConfirm(true)
                 return
-            } else if (!existing?.purchase_time) { // only warn on edit if original had no time
-                setPendingPayload({ type: 'update', payload })
+            } else if (!existing?.__original_purchase_time) { // only warn on edit if original had no time
+                setPendingPayload({ type: 'update', payload: cleanPayload })
                 setShowTimeConfirm(true)
                 return
             }
         }
 
-        if (isCreate) createMut.mutate(payload)
-        else updateMut.mutate({ id, payload })
+        if (isCreate) createMut.mutate(cleanPayload)
+        else updateMut.mutate({ id, payload: cleanPayload })
     }
 
     async function onUploadFiles(files) {
         if (!id) return
         const list = Array.from(files)
         for (const f of list) {
-            const toastId = toast({ title: 'Uploading…', description: f.name })
+            toast({ title: 'Uploading…', description: f.name })
             try {
                 await uploadReceiptAttachment(id, f)
                 qc.invalidateQueries({ queryKey: ['receipt', id] })
+                qc.invalidateQueries({ queryKey: ['dashboard', 'summary'] })
                 toast({ title: 'Uploaded', description: f.name, variant: 'success' })
             } catch (e) {
                 toast({ title: 'Upload failed', description: e?.message || 'Unknown error', variant: 'error' })
-            } finally {
-                // dismiss the temporary toast
             }
         }
     }
