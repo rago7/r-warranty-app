@@ -15,9 +15,15 @@ const LoginPage = lazy(() => import("../features/auth/pages/LoginPage.jsx"))
 const DashboardPage = lazy(() => import("../features/dashboard/pages/DashboardPage.jsx"))
 const ReceiptsListPage = lazy(() => import("../features/receipts/pages/ReceiptsListPage.jsx"))
 const ReceiptDetailPage = lazy(() => import("../features/receipts/pages/ReceiptDetailPage.jsx"))
-const ReceiptFormPage = lazy(() => import("../features/receipts/pages/ReceiptFormPage.jsx"))
+const ReceiptCreatePage = lazy(() => import("../features/receipts/pages/ReceiptCreatePage.jsx"))
+const ReceiptEditPage = lazy(() => import("../features/receipts/pages/ReceiptEditPage.jsx"))
 const ProfilePage = lazy(() => import("../features/profile/pages/ProfilePage.jsx"))
 const NotFound = lazy(() => import("../components/feedback/NotFound.jsx"))
+
+// Purchases pages (new)
+const PurchasesListPage = lazy(() => import("../features/purchases/pages/PurchasesListPage.jsx"))
+const PurchaseDetailPage = lazy(() => import("../features/purchases/pages/PurchaseDetailPage.jsx"))
+const PurchaseFormPage = lazy(() => import("../features/purchases/pages/PurchaseFormPage.jsx"))
 
 function RouteFallback() {
     return (
@@ -54,10 +60,19 @@ export default function App() {
                                         >
                                             <Route index element={<Navigate to="/dashboard" replace />} />
                                             <Route path="dashboard" element={<DashboardPage />} />
+
+                                            {/* Purchases (new) */}
+                                            <Route path="purchases" element={<PurchasesListPage />} />
+                                            <Route path="purchases/new" element={<PurchaseFormPage mode="create" />} />
+                                            <Route path="purchases/:id" element={<PurchaseDetailPage />} />
+                                            <Route path="purchases/:id/edit" element={<PurchaseFormPage mode="edit" />} />
+
+                                            {/* Receipts */}
                                             <Route path="receipts" element={<ReceiptsListPage />} />
-                                            <Route path="receipts/new" element={<ReceiptFormPage mode="create" />} />
+                                            <Route path="receipts/new" element={<ReceiptCreatePage />} />
                                             <Route path="receipts/:id" element={<ReceiptDetailPage />} />
-                                            <Route path="receipts/:id/edit" element={<ReceiptFormPage mode="edit" />} />
+                                            <Route path="receipts/:id/edit" element={<ReceiptEditPage />} />
+
                                             <Route path="profile" element={<ProfilePage />} />
                                         </Route>
 

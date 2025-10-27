@@ -164,6 +164,9 @@ function mapReceiptDetail(raw) {
             lineItems: Array.isArray(attrs.line_items)
                 ? attrs.line_items.map(mapLineItem).filter(Boolean)
                 : [],
+            purchaseLevelWarranty: attrs.purchase_level_warranty
+                ? mapWarranty({ ...attrs.purchase_level_warranty, level: 'purchase' })
+                : null,
             warranties: Array.isArray(attrs.warranties)
                 ? attrs.warranties.map(mapWarranty).filter(Boolean)
                 : [],
@@ -209,6 +212,15 @@ function mapReceiptDetail(raw) {
                   }),
               ].filter(Boolean)
             : [],
+        purchaseLevelWarranty: raw.warranty
+            ? mapWarranty({
+                  id: raw.warranty.id ?? `${raw.id}-w`,
+                  type: raw.warranty.type ?? 'manufacturer',
+                  end_date: raw.warranty.end_date,
+                  provider: raw.warranty.provider,
+                  level: raw.warranty.level ?? 'purchase',
+              })
+            : null,
         receipt: {
             id: raw.id ?? null,
             extractStatus: raw.extract_status ?? raw.status ?? 'unknown',

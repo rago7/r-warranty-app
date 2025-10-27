@@ -1,180 +1,353 @@
 import { http, HttpResponse } from 'msw'
 import dataset from '../fixtures/receipts.json'
 
-function toCents(value) {
-    const num = Number(value)
+const merchantsIndex = {
+    mrc_apple: { id: 'mrc_apple', name: 'Apple Store', location_text: 'Online' },
+    mrc_best_buy: { id: 'mrc_best_buy', name: 'Best Buy', location_text: 'Online' },
+    mrc_home_depot: { id: 'mrc_home_depot', name: 'Home Depot', location_text: 'Online' },
+    mrc_williams_sonoma: { id: 'mrc_williams_sonoma', name: 'Williams Sonoma', location_text: 'Online' },
+    mrc_nike: { id: 'mrc_nike', name: 'Nike Store', location_text: 'Online' },
+    mrc_target: { id: 'mrc_target', name: 'Target', location_text: 'Online' },
+    mrc_generic: { id: 'mrc_generic', name: 'General Merchant', location_text: 'Online' },
+}
+
+const MONEY_FACTOR = 100
+const todayIso = () => new Date().toISOString()
+
+function moneyToCents(value) {
+    const num = typeof value === 'string' ? Number.parseFloat(value) : Number(value)
     if (!Number.isFinite(num)) return 0
-    return Math.round(num * 100)
+    return Math.round(num * MONEY_FACTOR)
 }
 
-function ensureIso(dateString, timeString) {
-    if (timeString) {
-        const candidate = new Date(timeString)
-        if (!Number.isNaN(candidate.getTime())) return candidate.toISOString()
-    }
-    if (dateString) {
-        const base = `${dateString}T12:00:00Z`
-        const candidate = new Date(base)
-        if (!Number.isNaN(candidate.getTime())) return candidate.toISOString()
-    }
-    return new Date().toISOString()
+function centsToMoney(value) {
+    const cents = Number(value)
+    if (!Number.isFinite(cents)) return 0
+    return cents / MONEY_FACTOR
 }
 
-function statusFromWarranty(warranty) {
-    const end = warranty?.end_date ? new Date(warranty.end_date) : null
-    if (!end) return 'unknown'
-    return end.getTime() >= Date.now() ? 'in_warranty' : 'expired'
+function ensureIso(date, time) {
+    if (!date && !time) return todayIso()
+    if (date && time && time.includes('T')) {
+        const iso = new Date(time)
+        if (!Number.isNaN(iso.getTime())) return iso.toISOString()
+    }
+    if (date && time) {
+        const iso = new Date(`${date}T${time.length === 5 ? `${time}:00` : time}`)
+        if (!Number.isNaN(iso.getTime())) return iso.toISOString()
+    }
+    if (date) {
+        const iso = new Date(`${date}T12:00:00`)
+        if (!Number.isNaN(iso.getTime())) return iso.toISOString()
+    }
+    if (time) {
+        const iso = new Date(time)
+        if (!Number.isNaN(iso.getTime())) return iso.toISOString()
+    }
+    return todayIso()
+}
+
+function slugify(value) {
+    return (value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+}
+
+const counters = {
+    receipt: 2000,
+    purchase: 2000,
+    lineItem: 5000,
+    warranty: 7000,
+    attachment: 9000,
+    document: 11000,
+}
+
+function nextId(key) {
+    counters[key] += 1
+    return counters[key]
+}
+
+function resolveMerchant(merchantId, merchantName) {
+    let id = merchantId
+    if (!id && merchantName) {
+        const slug = slugify(merchantName)
+        id = slug ? `mrc_${slug}` : 'mrc_generic'
+    }
+    if (!id) id = 'mrc_generic'
+    if (!merchantsIndex[id]) {
+        merchantsIndex[id] = { id, name: merchantName || 'Unknown merchant', location_text: 'Online' }
+    }
+    const entry = merchantsIndex[id]
+    if (merchantName && !entry.name) {
+        entry.name = merchantName
+    }
+    return entry
+}
+
+function aggregateWarrantyStatus(record) {
+    const horizon = new Date()
+    const warranties = []
+    if (record.purchase_level_warranty) warranties.push(record.purchase_level_warranty)
+    for (const item of record.line_items) {
+        if (item.warranty_applicable && item.warranty) warranties.push(item.warranty)
+    }
+    if (warranties.length === 0) return 'unknown'
+    const active = warranties.some((w) => {
+        if (!w?.end_date) return false
+        const end = new Date(w.end_date)
+        return !Number.isNaN(end.getTime()) && end.getTime() >= horizon.getTime()
+    })
+    return active ? 'in_warranty' : 'expired'
 }
 
 function buildSearchBlob(record) {
-    const tags = Array.isArray(record.tags) ? record.tags.join(' ') : ''
-    return [record.merchant, record.product_name, record.title, record.category, tags]
+    const parts = [
+        record.merchant?.name,
+        record.purchase?.notes,
+        ...record.line_items.map((item) => item.name),
+        ...record.line_items.map((item) => item.category_id),
+    ]
+    return parts
         .filter(Boolean)
-        .join(' ') 
+        .join(' ')
         .toLowerCase()
 }
 
 function buildSnippet(record, query) {
     if (!query) return null
     const lc = query.toLowerCase()
-    if ((record.merchant || '').toLowerCase().includes(lc)) {
-        return `Merchant match: ${record.merchant}`
+    if ((record.merchant?.name || '').toLowerCase().includes(lc)) {
+        return `Merchant match: ${record.merchant.name}`
     }
-    if ((record.product_name || '').toLowerCase().includes(lc)) {
-        return `Product match: ${record.product_name}`
-    }
-    if ((record.title || '').toLowerCase().includes(lc)) {
-        return `Title match: ${record.title}`
-    }
-    if ((record.category || '').toLowerCase().includes(lc)) {
-        return `Category match: ${record.category}`
-    }
-    if (Array.isArray(record.tags)) {
-        const found = record.tags.find((tag) => (tag || '').toLowerCase().includes(lc))
-        if (found) return `Tag match: ${found}`
+    const item = record.line_items.find((it) => (it.name || '').toLowerCase().includes(lc))
+    if (item) return `Item match: ${item.name}`
+    const category = record.line_items.find((it) => (it.category_id || '').toLowerCase().includes(lc))
+    if (category) return `Category match: ${category.category_id}`
+    if ((record.purchase?.notes || '').toLowerCase().includes(lc)) {
+        return 'Notes match'
     }
     return null
 }
 
-function buildLineItems(record) {
-    if (Array.isArray(record.line_items) && record.line_items.length > 0) {
-        return record.line_items.map((item, index) => ({
-            id: item.id ?? `${record.id}-li-${index + 1}`,
-            name: item.name ?? item.title ?? record.product_name ?? record.title ?? 'Item',
-            quantity: item.quantity ?? 1,
-            unit_price_cents: item.unit_price_cents ?? item.unit_price ?? toCents(record.total_amount),
-            line_total_cents: item.line_total_cents ?? item.line_total ?? toCents(record.total_amount),
-            category_id: item.category_id ?? record.category ?? 'general',
-            returnable_until: item.returnable_until ?? record.warranty?.end_date ?? null,
-            warranty_applicable: item.warranty_applicable ?? Boolean(record.warranty),
-        }))
+function mapSeedLineItem(seed) {
+    const id = seed?.id ?? `lin_${nextId('lineItem')}`
+    const quantity = seed?.quantity != null ? Number(seed.quantity) : 1
+    const unitCents = seed?.unit_price_cents ?? moneyToCents(seed?.unit_price ?? seed?.line_total ?? 0)
+    const totalCents = seed?.line_total_cents ?? unitCents * quantity
+    const warranty = seed?.warranty
+        ? {
+              id: seed.warranty.id ?? `war_${nextId('warranty')}`,
+              type: seed.warranty.type ?? 'manufacturer',
+              provider: seed.warranty.provider ?? '',
+              policy_number: seed.warranty.policy_number ?? '',
+              start_date: seed.warranty.start_date ?? null,
+              end_date: seed.warranty.end_date ?? null,
+              terms_url: seed.warranty.terms_url ?? '',
+              coverage_notes: seed.warranty.coverage_notes ?? '',
+              warranty_doc_id: seed.warranty.warranty_doc_id ?? null,
+              level: 'item',
+              line_item_id: id,
+          }
+        : null
+    return {
+        id,
+        name: seed?.name ?? seed?.title ?? 'Item',
+        quantity: Number.isFinite(quantity) ? quantity : 1,
+        unit_price_cents: unitCents,
+        line_total_cents: totalCents,
+        category_id: seed?.category_id ?? seed?.category ?? 'cat_general',
+        returnable_until: seed?.returnable_until ?? null,
+        warranty_applicable: Boolean(seed?.warranty_applicable ?? warranty),
+        warranty,
     }
+}
 
-    return [
-        {
-            id: `${record.id}-li-1`,
-            name: record.product_name || record.title || 'Item',
-            quantity: 1,
-            unit_price_cents: toCents(record.total_amount),
-            line_total_cents: toCents(record.total_amount),
-            category_id: record.category || 'general',
-            returnable_until: record.warranty?.end_date ?? null,
-            warranty_applicable: Boolean(record.warranty),
-        },
-    ]
+function adaptSeedReceipt(seed) {
+    const id = seed?.id ?? `rcp_${nextId('receipt')}`
+    const merchant = resolveMerchant(seed?.merchant_id, seed?.merchant)
+    const purchaseDate = seed?.purchase_date ?? todayIso().slice(0, 10)
+    const purchaseTime = seed?.purchase_time ?? null
+    const purchaseAt = ensureIso(purchaseDate, purchaseTime)
+    const lineItems = Array.isArray(seed?.line_items) && seed.line_items.length > 0
+        ? seed.line_items.map((item) => mapSeedLineItem(item))
+        : [mapSeedLineItem({ ...seed, id: `${id}-li` })]
+    const subtotal = lineItems.reduce((sum, item) => sum + Number(item.line_total_cents ?? 0), 0)
+    const tax = seed?.tax_cents ?? moneyToCents(seed?.tax ?? 0)
+    const tip = seed?.tip_cents ?? moneyToCents(seed?.tip ?? 0)
+    const discount = seed?.discount_cents ?? moneyToCents(seed?.discount ?? 0)
+    const total = seed?.total_cents ?? moneyToCents(seed?.total_amount ?? subtotal / MONEY_FACTOR)
+    const purchase = {
+        id: seed?.purchase_id ?? `pur_${nextId('purchase')}`,
+        merchant_id: merchant.id,
+        purchase_at: purchaseAt,
+        currency: seed?.currency ?? 'USD',
+        subtotal_cents: subtotal,
+        tax_cents: tax,
+        tip_cents: tip,
+        discount_cents: discount,
+        total_cents: total,
+        payment_method_type: seed?.payment_method_type ?? 'card',
+        status: seed?.purchase_status ?? 'posted',
+        notes: seed?.notes ?? '',
+    }
+    const purchaseWarranty = seed?.purchase_level_warranty
+        ? {
+              id: seed.purchase_level_warranty.id ?? `war_${nextId('warranty')}`,
+              type: seed.purchase_level_warranty.type ?? 'manufacturer',
+              provider: seed.purchase_level_warranty.provider ?? '',
+              policy_number: seed.purchase_level_warranty.policy_number ?? '',
+              start_date: seed.purchase_level_warranty.start_date ?? null,
+              end_date: seed.purchase_level_warranty.end_date ?? null,
+              terms_url: seed.purchase_level_warranty.terms_url ?? '',
+              coverage_notes: seed.purchase_level_warranty.coverage_notes ?? '',
+              warranty_doc_id: seed.purchase_level_warranty.warranty_doc_id ?? null,
+              level: 'purchase',
+          }
+        : seed?.warranty
+            ? {
+                  id: seed.warranty.id ?? `war_${nextId('warranty')}`,
+                  type: seed.warranty.type ?? 'manufacturer',
+                  provider: seed.warranty.provider ?? '',
+                  policy_number: seed.warranty.policy_number ?? '',
+                  start_date: seed.warranty.start_date ?? null,
+                  end_date: seed.warranty.end_date ?? null,
+                  terms_url: seed.warranty.terms_url ?? '',
+                  coverage_notes: seed.warranty.coverage_notes ?? '',
+                  warranty_doc_id: seed.warranty.warranty_doc_id ?? null,
+                  level: 'purchase',
+              }
+            : null
+    const record = {
+        id,
+        purchase,
+        merchant,
+        line_items: lineItems,
+        purchase_level_warranty: purchaseWarranty,
+        document_id: seed?.document_id ?? `doc_${id}`,
+        extract_status: seed?.extract_status ?? 'success',
+        confidence_score: seed?.confidence_score ?? 0.96,
+        attachments: Array.isArray(seed?.attachments) ? seed.attachments : [],
+        created_at: seed?.created_at ?? todayIso(),
+        updated_at: seed?.updated_at ?? todayIso(),
+    }
+    record.warranty_status = aggregateWarrantyStatus(record)
+    record.search_blob = buildSearchBlob(record)
+    return record
+}
+
+const db = {
+    receipts: (dataset?.receipts || []).map((seed) => adaptSeedReceipt(seed)),
+}
+
+function mapLineItemForResponse(item) {
+    return {
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        unit_price_cents: item.unit_price_cents,
+        line_total_cents: item.line_total_cents,
+        category_id: item.category_id,
+        returnable_until: item.returnable_until,
+        warranty_applicable: item.warranty_applicable,
+        warranty: item.warranty
+            ? {
+                  ...item.warranty,
+              }
+            : null,
+    }
 }
 
 function buildWarranties(record) {
-    if (Array.isArray(record.warranties) && record.warranties.length > 0) {
-        return record.warranties.map((w, index) => ({
-            id: w.id ?? `${record.id}-war-${index + 1}`,
-            type: w.type ?? 'manufacturer',
-            end_date: w.end_date ?? null,
-            provider: w.provider ?? record.warranty?.provider ?? null,
-            level: w.level ?? 'purchase',
-        }))
+    const warranties = []
+    if (record.purchase_level_warranty) {
+        warranties.push({
+            id: record.purchase_level_warranty.id,
+            type: record.purchase_level_warranty.type,
+            provider: record.purchase_level_warranty.provider,
+            end_date: record.purchase_level_warranty.end_date,
+            level: 'purchase',
+        })
     }
-    if (!record.warranty) return []
-    return [
-        {
-            id: record.warranty.id ?? `${record.id}-war-1`,
-            type: record.warranty.type ?? 'manufacturer',
-            end_date: record.warranty.end_date ?? null,
-            provider: record.warranty.provider ?? null,
-            level: record.warranty.level ?? 'purchase',
-        },
-    ]
-}
-
-export const receiptsDb = {
-    receipts: (dataset?.receipts || []).map((raw, idx) => {
-        const id = raw?.id ?? `r_seed_${idx + 1}`
-        const warranty = raw?.warranty || null
-        const status = statusFromWarranty(warranty)
-        const purchaseAt = ensureIso(raw?.purchase_date, raw?.purchase_time)
-        const currency = raw?.currency || 'USD'
-        const totalAmount = Number(raw?.total_amount ?? 0)
-        return {
-            id,
-            title: raw?.title ?? raw?.product_name ?? 'Untitled',
-            product_name: raw?.product_name ?? raw?.title ?? 'Unknown item',
-            merchant: raw?.merchant ?? 'Unknown merchant',
-            merchant_location: raw?.merchant_location ?? 'Online',
-            purchase_date: raw?.purchase_date ?? new Date().toISOString().slice(0, 10),
-            purchase_time: raw?.purchase_time ?? purchaseAt,
-            purchase_id: raw?.purchase_id ?? `pur_${id}`,
-            total_amount: totalAmount,
-            currency,
-            category: raw?.category ?? 'general',
-            tags: Array.isArray(raw?.tags) ? raw.tags : [],
-            serial_number: raw?.serial_number ?? '',
-            order_number: raw?.order_number ?? '',
-            warranty,
-            warranties: raw?.warranties,
-            status,
-            extract_status: raw?.extract_status ?? 'success',
-            confidence_score: raw?.confidence_score ?? 0.96,
-            created_at: raw?.created_at ?? new Date().toISOString(),
-            updated_at: raw?.updated_at ?? new Date().toISOString(),
-            payment_method_type: raw?.payment_method_type ?? 'card',
-            purchase_status: raw?.purchase_status ?? 'posted',
-            posted_at: raw?.posted_at ?? purchaseAt,
-            line_items: raw?.line_items,
-            attachments: Array.isArray(raw?.attachments) ? raw.attachments : [],
-            document_id: raw?.document_id ?? `doc_${id}`,
-            search_blob: buildSearchBlob(raw),
+    for (const item of record.line_items) {
+        if (item.warranty_applicable && item.warranty) {
+            warranties.push({
+                id: item.warranty.id,
+                type: item.warranty.type,
+                provider: item.warranty.provider,
+                end_date: item.warranty.end_date,
+                level: 'item',
+                line_item_id: item.id,
+            })
         }
-    }),
+    }
+    return warranties
 }
-const db = receiptsDb
 
-let counter = 1000
-const genId = () => `r${++counter}`
-
-function filterAndSort(list, params) {
-    let items = [...list]
-    const q = (params.get('q') || '').toLowerCase()
-    if (q) {
-        items = items.filter((r) => (r.search_blob || '').includes(q))
+function buildDetailAttributes(record) {
+    return {
+        purchase: {
+            ...record.purchase,
+        },
+        merchant: {
+            id: record.merchant.id,
+            name: record.merchant.name,
+            location_text: record.merchant.location_text,
+        },
+        line_items: record.line_items.map((item) => mapLineItemForResponse(item)),
+        purchase_level_warranty: record.purchase_level_warranty || null,
+        warranties: buildWarranties(record),
+        receipt: {
+            id: record.id,
+            extract_status: record.extract_status,
+            confidence_score: record.confidence_score,
+        },
+        document_id: record.document_id,
+        attachments: record.attachments,
     }
+}
 
+function buildListResource(record, query) {
+    return {
+        type: 'receipt',
+        id: record.id,
+        attributes: {
+            purchase_id: record.purchase.id,
+            purchase_at: record.purchase.purchase_at,
+            merchant: record.merchant.name,
+            total_cents: record.purchase.total_cents,
+            currency: record.purchase.currency,
+            warranty_status: record.warranty_status,
+            extract_status: record.extract_status,
+            snippet: buildSnippet(record, query),
+        },
+    }
+}
+
+function filterReceipts(params) {
+    const query = (params.get('q') || '').toLowerCase()
     const category = params.get('category')
-    if (category && category !== 'all') {
-        items = items.filter((r) => (r.category || '').toLowerCase() === category.toLowerCase())
-    }
-
-    const statusParam = params.get('warranty_status') || params.get('status')
-    if (statusParam && statusParam !== 'all') {
-        items = items.filter((r) => r.status === statusParam)
-    }
-
+    const status = params.get('warranty_status') || params.get('status')
     const sort = params.get('sort') || '-purchase_at'
-    items.sort((a, b) => {
-        const aDate = new Date(ensureIso(a.purchase_date, a.purchase_time)).getTime()
-        const bDate = new Date(ensureIso(b.purchase_date, b.purchase_time)).getTime()
-        const aTotal = toCents(a.total_amount)
-        const bTotal = toCents(b.total_amount)
 
+    let list = [...db.receipts]
+    if (query) {
+        list = list.filter((record) => record.search_blob.includes(query))
+    }
+    if (category && category !== 'all') {
+        list = list.filter((record) =>
+            record.line_items.some((item) => (item.category_id || '').toLowerCase() === category.toLowerCase()),
+        )
+    }
+    if (status && status !== 'all') {
+        list = list.filter((record) => record.warranty_status === status)
+    }
+
+    list.sort((a, b) => {
+        const aDate = new Date(a.purchase.purchase_at).getTime()
+        const bDate = new Date(b.purchase.purchase_at).getTime()
+        const aTotal = a.purchase.total_cents
+        const bTotal = b.purchase.total_cents
         switch (sort) {
             case 'purchase_at':
                 return aDate - bDate
@@ -182,66 +355,117 @@ function filterAndSort(list, params) {
                 return bTotal - aTotal
             case 'total_cents':
                 return aTotal - bTotal
-            case 'date_desc':
             case '-purchase_at':
             default:
                 return bDate - aDate
         }
     })
 
-    return items
+    return list
 }
 
-function buildListResource(record, query) {
-    const purchaseAt = ensureIso(record.purchase_date, record.purchase_time)
+function normalizeLineItemPayload(item) {
+    const id = item.id ?? `lin_${nextId('lineItem')}`
+    const quantity = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1
+    const unitCents = moneyToCents(item.unit_price ?? item.unitPrice ?? centsToMoney(item.unit_price_cents ?? 0))
+    const lineTotalCents = moneyToCents(item.line_total ?? item.lineTotal ?? unitCents / MONEY_FACTOR * quantity)
+    const warrantyPayload = item.warranty
+        ? {
+              id: item.warranty.id ?? `war_${nextId('warranty')}`,
+              type: item.warranty.type ?? 'manufacturer',
+              provider: item.warranty.provider ?? '',
+              policy_number: item.warranty.policy_number ?? '',
+              start_date: item.warranty.start_date ?? null,
+              end_date: item.warranty.end_date ?? null,
+              terms_url: item.warranty.terms_url ?? '',
+              coverage_notes: item.warranty.coverage_notes ?? '',
+              warranty_doc_id: item.warranty.warranty_doc_id ?? null,
+              level: 'item',
+              line_item_id: id,
+          }
+        : null
     return {
-        type: 'receipt',
-        id: record.id,
-        attributes: {
-            purchase_id: record.purchase_id,
-            purchase_at: purchaseAt,
-            merchant: record.merchant,
-            total_cents: toCents(record.total_amount),
-            currency: record.currency,
-            warranty_status: record.status,
-            extract_status: record.extract_status,
-            snippet: buildSnippet(record, query),
-        },
+        id,
+        name: item.name || 'Item',
+        quantity,
+        unit_price_cents: unitCents,
+        line_total_cents: lineTotalCents,
+        category_id: item.category_id ?? null,
+        returnable_until: item.returnable_until ?? null,
+        warranty_applicable: Boolean(item.warranty_applicable ?? (item.warranty && true)),
+        warranty: warrantyPayload,
     }
 }
 
-function buildDetailAttributes(record) {
-    const purchaseAt = ensureIso(record.purchase_date, record.purchase_time)
-    const totalCents = toCents(record.total_amount)
-    const lineItems = buildLineItems(record)
-    const warranties = buildWarranties(record)
+function normalizePurchaseWarranty(payload) {
+    if (!payload) return null
     return {
-        purchase: {
-            subtotal_cents: lineItems.reduce((sum, item) => sum + Number(item.line_total_cents ?? 0), 0) || totalCents,
-            tax_cents: record.tax_cents ?? 0,
-            tip_cents: record.tip_cents ?? 0,
-            discount_cents: record.discount_cents ?? 0,
-            total_cents: totalCents,
-            currency: record.currency,
-            payment_method_type: record.payment_method_type ?? 'card',
-            status: record.purchase_status ?? 'posted',
-            purchase_at: purchaseAt,
-            posted_at: record.posted_at ?? purchaseAt,
-        },
-        merchant: {
-            name: record.merchant,
-            location_text: record.merchant_location ?? 'Online',
-        },
+        id: payload.id ?? `war_${nextId('warranty')}`,
+        type: payload.type ?? 'manufacturer',
+        provider: payload.provider ?? '',
+        policy_number: payload.policy_number ?? '',
+        start_date: payload.start_date ?? null,
+        end_date: payload.end_date ?? null,
+        terms_url: payload.terms_url ?? '',
+        coverage_notes: payload.coverage_notes ?? '',
+        warranty_doc_id: payload.warranty_doc_id ?? null,
+        level: 'purchase',
+    }
+}
+
+function buildRecordFromPayload(body) {
+    const purchasePayload = body?.purchase ?? {}
+    const merchantInfo = resolveMerchant(
+        purchasePayload.merchant_id,
+        purchasePayload.merchant_name ?? purchasePayload.merchantName ?? body?.merchant_name,
+    )
+    const lineItemsPayload = Array.isArray(body?.line_items) ? body.line_items : []
+    const lineItems = lineItemsPayload.length > 0
+        ? lineItemsPayload.map((item) => normalizeLineItemPayload(item))
+        : [normalizeLineItemPayload({ name: 'Item', quantity: 1, unit_price: 0, line_total: 0 })]
+    const subtotal = lineItems.reduce((sum, item) => sum + Number(item.line_total_cents ?? 0), 0)
+    const tax = moneyToCents(purchasePayload.tax)
+    const tip = moneyToCents(purchasePayload.tip)
+    const discount = moneyToCents(purchasePayload.discount)
+    const total = moneyToCents(purchasePayload.total)
+    let purchaseAt = purchasePayload.purchase_at
+    if (purchaseAt) {
+        const date = new Date(purchaseAt)
+        purchaseAt = Number.isNaN(date.getTime()) ? todayIso() : date.toISOString()
+    } else {
+        purchaseAt = todayIso()
+    }
+    const purchase = {
+        id: purchasePayload.id ?? `pur_${nextId('purchase')}`,
+        merchant_id: merchantInfo.id,
+        purchase_at: purchaseAt,
+        currency: purchasePayload.currency ?? 'USD',
+        subtotal_cents: subtotal,
+        tax_cents: tax,
+        tip_cents: tip,
+        discount_cents: discount,
+        total_cents: total || subtotal + tax + tip - discount,
+        payment_method_type: purchasePayload.payment_method_type ?? 'card',
+        status: purchasePayload.status ?? 'posted',
+        notes: purchasePayload.notes ?? '',
+    }
+    const purchaseWarranty = normalizePurchaseWarranty(body?.purchase_level_warranty)
+    return {
+        id: body?.id ?? `rcp_${nextId('receipt')}`,
+        purchase,
+        merchant: merchantInfo,
         line_items: lineItems,
-        warranties,
-        receipt: {
-            id: record.id,
-            extract_status: record.extract_status,
-            confidence_score: record.confidence_score ?? 0.96,
-        },
-        document_id: record.document_id,
+        purchase_level_warranty: purchaseWarranty,
+        document_id: body?.document_id ?? `doc_${nextId('document')}`,
+        extract_status: body?.extract_status ?? 'processing',
+        confidence_score: 0.5,
+        attachments: [],
+        created_at: todayIso(),
+        updated_at: todayIso(),
     }
 }
+
+export const receiptsDb = db
 
 export const receiptHandlers = [
     http.get('/api/receipts', ({ request }) => {
@@ -249,17 +473,15 @@ export const receiptHandlers = [
         const params = url.searchParams
         const page = Number(params.get('page') || '1')
         const pageSize = Number(params.get('page_size') || '10')
-
-        const filtered = filterAndSort(db.receipts, params)
+        const filtered = filterReceipts(params)
         const total = filtered.length
         const start = (page - 1) * pageSize
         const end = start + pageSize
         const items = filtered.slice(start, end)
         const query = (params.get('q') || '').toLowerCase()
-
         return HttpResponse.json(
             {
-                data: items.map((item) => buildListResource(item, query)),
+                data: items.map((record) => buildListResource(record, query)),
                 links: {
                     page,
                     page_size: pageSize,
@@ -271,8 +493,7 @@ export const receiptHandlers = [
     }),
 
     http.get('/api/receipts/:id', ({ params }) => {
-        const id = params.id
-        const record = db.receipts.find((r) => r.id === id)
+        const record = db.receipts.find((entry) => entry.id === params.id)
         if (!record) {
             return HttpResponse.json({ message: 'Not found' }, { status: 404 })
         }
@@ -291,100 +512,74 @@ export const receiptHandlers = [
     http.post('/api/receipts', async ({ request }) => {
         try {
             const body = await request.json()
-            const id = genId()
-            const purchaseDate = body.purchase_date || new Date().toISOString().slice(0, 10)
-            const purchaseTime = body.purchase_time || `${purchaseDate}T12:00:00Z`
-            const warranty = body.warranty || {}
-            const record = {
-                id,
-                title: body.title || body.product_name || 'Untitled',
-                product_name: body.product_name || body.title || 'Unknown item',
-                merchant: body.merchant || 'Unknown merchant',
-                merchant_location: body.merchant_location || 'Online',
-                purchase_date: purchaseDate,
-                purchase_time: purchaseTime,
-                purchase_id: body.purchase_id || `pur_${id}`,
-                total_amount: Number(body.total_amount || 0),
-                currency: body.currency || 'USD',
-                category: body.category || 'general',
-                tags: Array.isArray(body.tags) ? body.tags : [],
-                serial_number: body.serial_number || '',
-                order_number: body.order_number || '',
-                warranty,
-                warranties: body.warranties,
-                status: statusFromWarranty(warranty),
-                extract_status: 'processing',
-                confidence_score: 0.5,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                payment_method_type: body.payment_method_type || 'card',
-                purchase_status: body.purchase_status || 'posted',
-                posted_at: body.posted_at || purchaseTime,
-                line_items: body.line_items,
-                attachments: [],
-                document_id: `doc_${id}`,
-                search_blob: buildSearchBlob(body),
-            }
+            const record = buildRecordFromPayload(body)
+            record.warranty_status = aggregateWarrantyStatus(record)
+            record.search_blob = buildSearchBlob(record)
             db.receipts.unshift(record)
             return HttpResponse.json(
                 {
                     data: {
                         type: 'receipt_detail',
-                        id,
+                        id: record.id,
                         attributes: buildDetailAttributes(record),
                     },
                 },
                 { status: 201 },
             )
         } catch {
-            return HttpResponse.json({ message: 'Bad request' }, { status: 400 })
+            return HttpResponse.json({ message: 'Invalid payload' }, { status: 400 })
         }
     }),
 
     http.put('/api/receipts/:id', async ({ params, request }) => {
         const id = params.id
-        const idx = db.receipts.findIndex((r) => r.id === id)
-        if (idx === -1) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
-        const body = await request.json().catch(() => ({}))
-        const existing = db.receipts[idx]
-        const warranty = body.warranty ? { ...existing.warranty, ...body.warranty } : existing.warranty
-        const updated = {
-            ...existing,
-            ...body,
-            warranty,
-            warranties: body.warranties ?? existing.warranties,
-            status: statusFromWarranty(warranty),
-            purchase_time: body.purchase_time || existing.purchase_time,
-            purchase_date: body.purchase_date || existing.purchase_date,
-            total_amount: Number(body.total_amount ?? existing.total_amount),
-            currency: body.currency || existing.currency,
-            category: body.category || existing.category,
-            tags: Array.isArray(body.tags) ? body.tags : existing.tags,
-            document_id: body.document_id || existing.document_id,
-            updated_at: new Date().toISOString(),
+        const index = db.receipts.findIndex((entry) => entry.id === id)
+        if (index === -1) {
+            return HttpResponse.json({ message: 'Not found' }, { status: 404 })
         }
-        updated.search_blob = buildSearchBlob(updated)
-        db.receipts[idx] = updated
-        return HttpResponse.json(
-            {
-                data: {
-                    type: 'receipt_detail',
-                    id: updated.id,
-                    attributes: buildDetailAttributes(updated),
+        try {
+            const body = await request.json()
+            const existing = db.receipts[index]
+            const incoming = buildRecordFromPayload({ ...body, id })
+            const updated = {
+                ...existing,
+                ...incoming,
+                purchase: { ...existing.purchase, ...incoming.purchase },
+                merchant: incoming.merchant,
+                line_items: incoming.line_items,
+                purchase_level_warranty: incoming.purchase_level_warranty,
+                document_id: incoming.document_id ?? existing.document_id,
+                extract_status: existing.extract_status,
+                attachments: existing.attachments,
+                created_at: existing.created_at,
+                updated_at: todayIso(),
+            }
+            updated.warranty_status = aggregateWarrantyStatus(updated)
+            updated.search_blob = buildSearchBlob(updated)
+            db.receipts[index] = updated
+            return HttpResponse.json(
+                {
+                    data: {
+                        type: 'receipt_detail',
+                        id: updated.id,
+                        attributes: buildDetailAttributes(updated),
+                    },
                 },
-            },
-            { status: 200 },
-        )
+                { status: 200 },
+            )
+        } catch {
+            return HttpResponse.json({ message: 'Invalid payload' }, { status: 400 })
+        }
     }),
 
     http.post('/api/receipts/:id/attachments', async ({ params, request }) => {
-        const id = params.id
-        const rec = db.receipts.find((r) => r.id === id)
-        if (!rec) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
-
+        const record = db.receipts.find((entry) => entry.id === params.id)
+        if (!record) {
+            return HttpResponse.json({ message: 'Not found' }, { status: 404 })
+        }
         let filename = 'file'
-        let type = 'file'
         let size = 0
+        let type = 'file'
         try {
             const form = await request.formData()
             const file = form.get('file')
@@ -398,11 +593,10 @@ export const receiptHandlers = [
                         : 'file'
             }
         } catch {
-            // ignore parsing issues when reading the mock file input
+            // ignore parsing errors
         }
-
         const attachment = {
-            id: `${id}-att-${Math.random().toString(36).slice(2, 8)}`,
+            id: `att_${nextId('attachment')}`,
             filename,
             type,
             size,
@@ -411,20 +605,18 @@ export const receiptHandlers = [
                     ? `https://placehold.co/800x600?text=${encodeURIComponent(filename)}`
                     : 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         }
-
-        rec.attachments = rec.attachments || []
-        rec.attachments.push(attachment)
-        rec.updated_at = new Date().toISOString()
-
-        await new Promise((resolve) => setTimeout(resolve, 300))
+        record.attachments = record.attachments || []
+        record.attachments.push(attachment)
+        record.updated_at = todayIso()
         return HttpResponse.json({ attachment }, { status: 201 })
     }),
 
     http.delete('/api/receipts/:id', ({ params }) => {
-        const id = params.id
-        const idx = db.receipts.findIndex((r) => r.id === id)
-        if (idx === -1) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
-        db.receipts.splice(idx, 1)
+        const index = db.receipts.findIndex((entry) => entry.id === params.id)
+        if (index === -1) {
+            return HttpResponse.json({ message: 'Not found' }, { status: 404 })
+        }
+        db.receipts.splice(index, 1)
         return HttpResponse.json({ ok: true }, { status: 200 })
     }),
 

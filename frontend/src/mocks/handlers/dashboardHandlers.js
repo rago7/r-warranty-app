@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 import { receiptsDb } from './receiptHandlers'
 
 const DAY_MS = 24 * 60 * 60 * 1000
+const MONEY_FACTOR = 100
 
 function normalizeMonth(value) {
     if (typeof value !== 'string') return null
@@ -15,12 +16,9 @@ function currentMonth() {
 }
 
 function ensurePurchaseAt(record) {
-    if (record.purchase_time) {
-        const maybe = new Date(record.purchase_time)
-        if (!Number.isNaN(maybe.getTime())) return maybe
-    }
-    if (record.purchase_date) {
-        const maybe = new Date(`${record.purchase_date}T12:00:00Z`)
+    const purchaseAt = record.purchase?.purchase_at
+    if (purchaseAt) {
+        const maybe = new Date(purchaseAt)
         if (!Number.isNaN(maybe.getTime())) return maybe
     }
     return new Date()
@@ -33,56 +31,71 @@ function toNumber(value, fallback) {
 
 function buildRecentReceipt(record) {
     const purchaseAt = ensurePurchaseAt(record).toISOString()
+    const firstLineItem = record.line_items?.[0]
     return {
         receipt_id: record.id,
-        purchase_id: record.purchase_id,
-        merchant: record.merchant,
+        purchase_id: record.purchase?.id ?? record.id,
+        merchant: record.merchant?.name ?? 'Unknown merchant',
         purchase_at: purchaseAt,
-        total_cents: Math.round(Number(record.total_amount || 0) * 100),
-        currency: record.currency || 'USD',
-        extract_status: record.extract_status || 'success',
-        warranty_status: record.status || 'unknown',
+        total_cents: record.purchase?.total_cents ?? 0,
+        currency: record.purchase?.currency ?? 'USD',
+        extract_status: record.extract_status ?? 'success',
+        warranty_status: record.warranty_status ?? 'unknown',
+        line_item_name: firstLineItem?.name ?? null,
     }
 }
 
-function buildUpcomingExpiry(record) {
-    const endDate = record.warranty?.end_date
-    if (!endDate) return null
-    const end = new Date(endDate)
-    if (Number.isNaN(end.getTime())) return null
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
-    const daysLeft = Math.ceil((end.getTime() - now.getTime()) / DAY_MS)
-    if (daysLeft < 0) return null
-    return {
-        warranty_id: record.warranty?.id || `${record.id}-war`,
-        purchase_id: record.purchase_id,
-        line_item_name: record.product_name || record.title || 'Item',
-        merchant: record.merchant,
-        end_date: end.toISOString().slice(0, 10),
-        days_left: daysLeft,
-        type: record.warranty?.type || 'manufacturer',
+function collectWarrantyEntries(record) {
+    const merchantName = record.merchant?.name ?? 'Unknown merchant'
+    const purchaseId = record.purchase?.id ?? record.id
+    const entries = []
+    if (record.purchase_level_warranty?.end_date) {
+        entries.push({
+            warranty_id: record.purchase_level_warranty.id,
+            purchase_id: purchaseId,
+            line_item_name: 'Purchase coverage',
+            merchant: merchantName,
+            end_date: record.purchase_level_warranty.end_date,
+            type: record.purchase_level_warranty.type ?? 'manufacturer',
+        })
     }
+    for (const item of record.line_items || []) {
+        if (item.warranty_applicable && item.warranty?.end_date) {
+            entries.push({
+                warranty_id: item.warranty.id,
+                purchase_id: purchaseId,
+                line_item_name: item.name ?? 'Item',
+                merchant: merchantName,
+                end_date: item.warranty.end_date,
+                type: item.warranty.type ?? 'manufacturer',
+            })
+        }
+    }
+    return entries
 }
 
 function buildCategoryStats(records, month) {
-    const monthRecords = month
-        ? records.filter((record) => {
-              const purchaseAt = ensurePurchaseAt(record)
-              return purchaseAt.toISOString().slice(0, 7) === month
-          })
-        : records
-
     const map = new Map()
-    for (const record of monthRecords) {
-        const key = record.category || 'uncategorized'
-        const prev = map.get(key) || { category: key, sum: 0, count: 0, currency: record.currency || 'USD' }
-        prev.sum += Number(record.total_amount || 0)
-        prev.count += 1
-        map.set(key, prev)
+    for (const record of records) {
+        const purchaseAt = ensurePurchaseAt(record)
+        if (month && purchaseAt.toISOString().slice(0, 7) !== month) continue
+        const currency = record.purchase?.currency ?? 'USD'
+        for (const item of record.line_items || []) {
+            const key = item.category_id || 'uncategorized'
+            const prev = map.get(key) || { category: key, sum: 0, count: 0, currency }
+            prev.sum += Number(item.line_total_cents ?? 0)
+            prev.count += 1
+            prev.currency = currency
+            map.set(key, prev)
+        }
     }
 
-    return Array.from(map.values()).sort((a, b) => b.sum - a.sum)
+    return Array.from(map.values())
+        .map((entry) => ({
+            ...entry,
+            sum: entry.sum / MONEY_FACTOR,
+        }))
+        .sort((a, b) => b.sum - a.sum)
 }
 
 function buildTotals(records) {
@@ -93,8 +106,9 @@ function buildTotals(records) {
         warranty_unknown: 0,
     }
     for (const record of records) {
-        if (record.status === 'in_warranty') totals.warranty_in += 1
-        else if (record.status === 'expired') totals.warranty_expired += 1
+        const status = record.warranty_status ?? 'unknown'
+        if (status === 'in_warranty') totals.warranty_in += 1
+        else if (status === 'expired') totals.warranty_expired += 1
         else totals.warranty_unknown += 1
     }
     return totals
@@ -104,11 +118,17 @@ function buildUpcoming(records, windowDays) {
     const now = new Date()
     now.setHours(0, 0, 0, 0)
     const horizon = new Date(now.getTime() + windowDays * DAY_MS)
-    return records
-        .map((record) => buildUpcomingExpiry(record))
-        .filter((item) => item && new Date(item.end_date) <= horizon)
-        .sort((a, b) => a.days_left - b.days_left)
-        .slice(0, 6)
+    const entries = []
+    for (const record of records) {
+        for (const entry of collectWarrantyEntries(record)) {
+            const end = new Date(entry.end_date)
+            if (Number.isNaN(end.getTime())) continue
+            if (end < now || end > horizon) continue
+            const daysLeft = Math.ceil((end.getTime() - now.getTime()) / DAY_MS)
+            entries.push({ ...entry, end_date: entry.end_date, days_left: daysLeft })
+        }
+    }
+    return entries.sort((a, b) => a.days_left - b.days_left).slice(0, 6)
 }
 
 function buildRecent(records, limit) {
