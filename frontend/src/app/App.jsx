@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppShell from "../components/layout/AppShell.jsx";
 import ErrorBoundary from "../components/feedback/ErrorBoundary.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
@@ -15,7 +15,8 @@ const LoginPage = lazy(() => import("../features/auth/pages/LoginPage.jsx"))
 const DashboardPage = lazy(() => import("../features/dashboard/pages/DashboardPage.jsx"))
 const ReceiptsListPage = lazy(() => import("../features/receipts/pages/ReceiptsListPage.jsx"))
 const ReceiptDetailPage = lazy(() => import("../features/receipts/pages/ReceiptDetailPage.jsx"))
-const ReceiptFormPage = lazy(() => import("../features/receipts/pages/ReceiptFormPage.jsx"))
+const ReceiptCreatePage = lazy(() => import("../features/receipts/pages/ReceiptCreatePage.jsx"))
+const ReceiptEditPage = lazy(() => import("../features/receipts/pages/ReceiptEditPage.jsx"))
 const ProfilePage = lazy(() => import("../features/profile/pages/ProfilePage.jsx"))
 const NotFound = lazy(() => import("../components/feedback/NotFound.jsx"))
 
@@ -31,16 +32,6 @@ function RouteFallback() {
             <div className="mt-3 h-40 animate-pulse rounded bg-slate-200" />
         </div>
     )
-}
-
-// Redirect helpers for legacy receipts dynamic routes
-function ReceiptIdRedirect() {
-    const { id } = useParams()
-    return <Navigate to={`/purchases/${id}`} replace />
-}
-function ReceiptIdEditRedirect() {
-    const { id } = useParams()
-    return <Navigate to={`/purchases/${id}/edit`} replace />
 }
 
 export default function App() {
@@ -76,11 +67,11 @@ export default function App() {
                                             <Route path="purchases/:id" element={<PurchaseDetailPage />} />
                                             <Route path="purchases/:id/edit" element={<PurchaseFormPage mode="edit" />} />
 
-                                            {/* Legacy receipts routes redirect to purchases */}
-                                            <Route path="receipts" element={<Navigate to="/purchases" replace />} />
-                                            <Route path="receipts/new" element={<Navigate to="/purchases/new" replace />} />
-                                            <Route path="receipts/:id" element={<ReceiptIdRedirect />} />
-                                            <Route path="receipts/:id/edit" element={<ReceiptIdEditRedirect />} />
+                                            {/* Receipts */}
+                                            <Route path="receipts" element={<ReceiptsListPage />} />
+                                            <Route path="receipts/new" element={<ReceiptCreatePage />} />
+                                            <Route path="receipts/:id" element={<ReceiptDetailPage />} />
+                                            <Route path="receipts/:id/edit" element={<ReceiptEditPage />} />
 
                                             <Route path="profile" element={<ProfilePage />} />
                                         </Route>
