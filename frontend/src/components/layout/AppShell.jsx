@@ -82,9 +82,9 @@ export default function AppShell() {
                             <IconHome />
                             <span className="text-[11px] leading-4">Home</span>
                         </NavLink>
-                        <NavLink to="/purchases" className={navLinkCls}>
+                        <NavLink to="/receipts" className={navLinkCls}>
                             <IconReceipt />
-                            <span className="text-[11px] leading-4">Purchases</span>
+                            <span className="text-[11px] leading-4">Receipts</span>
                         </NavLink>
                     </nav>
 
